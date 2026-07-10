@@ -1,0 +1,19 @@
+.box {
+  width: min(900px, 90vw);
+  min-height: 160px;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid #777777;
+  color: #ffffff;
+}
+
+.text {
+  font-size: 24px;
+  line-height: 1.8;
+}
+
+.instruction {
+  margin-top: 24px;
+  font-size: 14px;
+  color: #bbbbbb;
+}
