@@ -1,8 +1,15 @@
 .screen {
+  position: relative;
   min-height: 100vh;
   background: #050505;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.cipherText {
+  font-size: 28px;
+  line-height: 1.6;
+  color: #ff5555;
 }

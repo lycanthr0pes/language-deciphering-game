@@ -1,0 +1,62 @@
+.list {
+  position: absolute;
+  left: 50%;
+  bottom: 220px;
+  width: min(900px, 90vw);
+  transform: translateX(-50%);
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid #555555;
+}
+
+.tokens,
+.words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.token,
+.activeToken {
+  display: grid;
+  gap: 8px;
+  min-width: 100px;
+  padding: 10px 12px;
+  color: #ffffff;
+  background: #111111;
+  border: 1px solid #666666;
+  cursor: pointer;
+}
+
+.activeToken {
+  border-color: #66aaff;
+  box-shadow: 0 0 8px rgba(102, 170, 255, 0.8);
+}
+
+.cipher {
+  color: #ff5555;
+}
+
+.answer {
+  color: #66aaff;
+}
+
+.wordButton,
+.submitButton,
+.disabledSubmitButton {
+  padding: 8px 16px;
+  color: #dceeff;
+  background: #111111;
+  border: 1px solid #666666;
+  cursor: pointer;
+}
+
+.submitButton {
+  border-color: #66aaff;
+}
+
+.disabledSubmitButton {
+  color: #777777;
+  cursor: not-allowed;
+}
