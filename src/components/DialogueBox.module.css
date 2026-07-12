@@ -17,3 +17,16 @@
   font-size: 14px;
   color: #bbbbbb;
 }
+
+.normal {
+  color: #ffffff;
+}
+
+.cipher {
+  color: #ff5555;
+}
+
+.translation,
+.answer {
+  color: #66aaff;
+}
