@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
+import { ResultScreen } from "./ResultScreen";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
+import { GAME_CONFIG } from "@/lib/gameConfig";
 import type { GamePhase } from "@/lib/gameTypes";
 import { judgeAnswer } from "@/lib/judgeAnswer";
 import styles from "./GameScreen.module.css";
@@ -31,6 +33,12 @@ export function GameScreen() {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Partial<Record<string, string>>
   >({});
+  const [correctCount, setCorrectCount] = useState(0);
+  const [mistakeCount, setMistakeCount] = useState(0);
+  const [mistakesRemaining, setMistakesRemaining] = useState<number>(
+    GAME_CONFIG.safeMistakeCount,
+  );
+  const [difficultyLevel, setDifficultyLevel] = useState(1);
 
   const currentDialogue = INTRO_DIALOGUES[dialogueIndex];
 
@@ -49,6 +57,17 @@ export function GameScreen() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  function handleMainClick() {
+    if (gamePhase === "introDialogue") {
+      handleNextDialogue();
+      return;
+    }
+
+    if (gamePhase === "result") {
+      resetGame();
+    }
+  }
 
   function handleNextDialogue() {
     if (gamePhase !== "introDialogue") return;
@@ -93,19 +112,56 @@ export function GameScreen() {
     const isCorrect = judgeAnswer(sampleQuestion, selectedAnswers);
 
     if (isCorrect) {
-      alert("正解");
-    } else {
-      alert("不正解");
+      const nextCorrectCount = correctCount + 1;
+      setCorrectCount(nextCorrectCount);
+      setSelectedAnswers({});
+      setActiveTokenId(null);
+
+      if (difficultyLevel >= GAME_CONFIG.finalLevel) {
+        setGamePhase("result");
+        return;
+      }
+
+      setDifficultyLevel((prev) => prev + 1);
+      setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+      return;
     }
+
+    const nextMistakeCount = mistakeCount + 1;
+    setMistakeCount(nextMistakeCount);
+    setSelectedAnswers({});
+    setActiveTokenId(null);
+
+    if (mistakesRemaining <= 0) {
+      setGamePhase("result");
+      return;
+    }
+
+    setMistakesRemaining((prev) => Math.max(prev - 1, 0));
+  }
+
+  function resetGame() {
+    setGamePhase("introDialogue");
+    setDialogueIndex(0);
+    setSelectedAnswers({});
+    setActiveTokenId(null);
+    setCorrectCount(0);
+    setMistakeCount(0);
+    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+    setDifficultyLevel(1);
   }
 
   return (
-    <main className={styles.screen} onClick={handleNextDialogue}>
+    <main className={styles.screen} onClick={handleMainClick}>
       {gamePhase === "introDialogue" ? (
         <DialogueBox line={currentDialogue} instruction="左クリックで進む" />
       ) : null}
       {gamePhase === "question" ? (
         <>
+          <div className={styles.status}>
+            正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
+            {mistakesRemaining}
+          </div>
           <p className={styles.cipherText}>問題: {sampleQuestion.cipherText}</p>
           <ChoiceList
             tokens={sampleQuestion.tokens}
@@ -118,6 +174,13 @@ export function GameScreen() {
             onSubmit={handleSubmitAnswer}
           />
         </>
+      ) : null}
+      {gamePhase === "result" ? (
+        <ResultScreen
+          correctCount={correctCount}
+          mistakeCount={mistakeCount}
+          onRetry={resetGame}
+        />
       ) : null}
     </main>
   );
