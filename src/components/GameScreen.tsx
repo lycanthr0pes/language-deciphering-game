@@ -1,34 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
 import { ResultScreen } from "./ResultScreen";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
+import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
-import type { GamePhase } from "@/lib/gameTypes";
+import type { DialogueLine, GamePhase, Question } from "@/lib/gameTypes";
 import { judgeAnswer } from "@/lib/judgeAnswer";
 import styles from "./GameScreen.module.css";
 
-const sampleQuestion = {
-  cipherText: "rami humi",
-  tokens: [
-    { id: "token-1", cipher: "rami", category: "color", correctJa: "青い" },
-    { id: "token-2", cipher: "humi", category: "humanNoun", correctJa: "女" },
-  ],
-  correctAnswers: {
-    "token-1": "青い",
-    "token-2": "女",
-  },
-  choiceCandidatesByTokenId: {
-    "token-1": ["赤い", "青い"],
-    "token-2": ["男", "女"],
-  },
-};
-
 export function GameScreen() {
+  const [dialogueLines, setDialogueLines] =
+    useState<DialogueLine[]>(INTRO_DIALOGUES);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [gamePhase, setGamePhase] = useState<GamePhase>("introDialogue");
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Partial<Record<string, string>>
@@ -40,46 +28,56 @@ export function GameScreen() {
   );
   const [difficultyLevel, setDifficultyLevel] = useState(1);
 
-  const currentDialogue = INTRO_DIALOGUES[dialogueIndex];
+  const currentDialogue = dialogueLines[dialogueIndex] ?? null;
 
-  const canSubmitAnswer = sampleQuestion.tokens.every((token) => {
-    return selectedAnswers[token.id];
-  });
+  const canSubmitAnswer =
+    currentQuestion?.tokens.every((token) => selectedAnswers[token.id]) ?? false;
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.code === "Space") {
-        event.preventDefault();
-        console.log("あとで手帳を開閉する");
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  function handleMainClick() {
-    if (gamePhase === "introDialogue") {
-      handleNextDialogue();
-      return;
-    }
-
-    if (gamePhase === "result") {
-      resetGame();
-    }
+  function startRound(level: number) {
+    const round = generateRound(level);
+    setDialogueLines(round.dialogueLines);
+    setDialogueIndex(0);
+    setCurrentQuestion(round.question);
+    setSelectedAnswers({});
+    setActiveTokenId(null);
+    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+    setGamePhase("exampleDialogue");
   }
 
   function handleNextDialogue() {
-    if (gamePhase !== "introDialogue") return;
+    if (gamePhase === "result" || gamePhase === "answering") return;
 
     const nextIndex = dialogueIndex + 1;
 
-    if (nextIndex < INTRO_DIALOGUES.length) {
+    if (nextIndex < dialogueLines.length) {
       setDialogueIndex(nextIndex);
       return;
     }
 
-    setGamePhase("question");
+    if (gamePhase === "introDialogue") {
+      startRound(difficultyLevel);
+      return;
+    }
+
+    if (gamePhase === "exampleDialogue") {
+      if (!currentQuestion) return;
+
+      const questionLines: DialogueLine[] = [
+        {
+          id: "question-line",
+          text: currentQuestion.cipherText,
+          type: "cipher",
+        },
+      ];
+      setDialogueLines(questionLines);
+      setDialogueIndex(0);
+      setGamePhase("question");
+      return;
+    }
+
+    if (gamePhase === "question") {
+      setGamePhase("answering");
+    }
   }
 
   function handleSelectToken(tokenId: string) {
@@ -94,41 +92,38 @@ export function GameScreen() {
   }
 
   function getActiveChoices() {
-    if (activeTokenId === null) return [];
-
-    const candidatesByTokenId: Record<string, string[]> =
-      sampleQuestion.choiceCandidatesByTokenId;
-
-    return candidatesByTokenId[activeTokenId] ?? [];
+    if (!currentQuestion || activeTokenId === null) return [];
+    return currentQuestion.choiceCandidatesByTokenId[activeTokenId] ?? [];
   }
 
   function handleSubmitAnswer() {
-    const isComplete = sampleQuestion.tokens.every((token) => {
-      return selectedAnswers[token.id];
-    });
+    if (!currentQuestion || !canSubmitAnswer) return;
 
-    if (!isComplete) return;
-
-    const isCorrect = judgeAnswer(sampleQuestion, selectedAnswers);
-
-    if (isCorrect) {
-      const nextCorrectCount = correctCount + 1;
-      setCorrectCount(nextCorrectCount);
-      setSelectedAnswers({});
-      setActiveTokenId(null);
-
-      if (difficultyLevel >= GAME_CONFIG.finalLevel) {
-        setGamePhase("result");
-        return;
-      }
-
-      setDifficultyLevel((prev) => prev + 1);
-      setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+    if (judgeAnswer(currentQuestion, selectedAnswers)) {
+      handleCorrectAnswer();
       return;
     }
 
-    const nextMistakeCount = mistakeCount + 1;
-    setMistakeCount(nextMistakeCount);
+    handleWrongAnswer();
+  }
+
+  function handleCorrectAnswer() {
+    setCorrectCount((prev) => prev + 1);
+    setSelectedAnswers({});
+    setActiveTokenId(null);
+
+    if (difficultyLevel >= GAME_CONFIG.finalLevel) {
+      setGamePhase("result");
+      return;
+    }
+
+    const nextLevel = difficultyLevel + 1;
+    setDifficultyLevel(nextLevel);
+    startRound(nextLevel);
+  }
+
+  function handleWrongAnswer() {
+    setMistakeCount((prev) => prev + 1);
     setSelectedAnswers({});
     setActiveTokenId(null);
 
@@ -142,7 +137,9 @@ export function GameScreen() {
 
   function resetGame() {
     setGamePhase("introDialogue");
+    setDialogueLines(INTRO_DIALOGUES);
     setDialogueIndex(0);
+    setCurrentQuestion(null);
     setSelectedAnswers({});
     setActiveTokenId(null);
     setCorrectCount(0);
@@ -151,37 +148,51 @@ export function GameScreen() {
     setDifficultyLevel(1);
   }
 
+  function handleMainClick() {
+    if (gamePhase === "result") {
+      resetGame();
+      return;
+    }
+
+    handleNextDialogue();
+  }
+
+  const instruction =
+    gamePhase === "answering"
+      ? "暗号単語を選び、日本語を割り当ててください"
+      : "左クリックで進む";
+
   return (
     <main className={styles.screen} onClick={handleMainClick}>
-      {gamePhase === "introDialogue" ? (
-        <DialogueBox line={currentDialogue} instruction="左クリックで進む" />
-      ) : null}
-      {gamePhase === "question" ? (
+      {gamePhase !== "result" ? (
         <>
           <div className={styles.status}>
             正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
             {mistakesRemaining}
           </div>
-          <p className={styles.cipherText}>問題: {sampleQuestion.cipherText}</p>
-          <ChoiceList
-            tokens={sampleQuestion.tokens}
-            choices={getActiveChoices()}
-            selectedAnswers={selectedAnswers}
-            activeTokenId={activeTokenId}
-            canSubmit={canSubmitAnswer}
-            onSelectToken={handleSelectToken}
-            onSelectWord={handleSelectWord}
-            onSubmit={handleSubmitAnswer}
-          />
+          {currentDialogue ? (
+            <DialogueBox line={currentDialogue} instruction={instruction} />
+          ) : null}
+          {gamePhase === "answering" && currentQuestion ? (
+            <ChoiceList
+              tokens={currentQuestion.tokens}
+              choices={getActiveChoices()}
+              selectedAnswers={selectedAnswers}
+              activeTokenId={activeTokenId}
+              canSubmit={canSubmitAnswer}
+              onSelectToken={handleSelectToken}
+              onSelectWord={handleSelectWord}
+              onSubmit={handleSubmitAnswer}
+            />
+          ) : null}
         </>
-      ) : null}
-      {gamePhase === "result" ? (
+      ) : (
         <ResultScreen
           correctCount={correctCount}
           mistakeCount={mistakeCount}
           onRetry={resetGame}
         />
-      ) : null}
+      )}
     </main>
   );
 }
