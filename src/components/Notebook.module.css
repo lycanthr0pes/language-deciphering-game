@@ -1,0 +1,85 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.notebook {
+  width: min(720px, 90vw);
+  min-height: 280px;
+  padding: 28px 24px 20px;
+  color: #ffffff;
+  background: rgba(12, 12, 12, 0.92);
+  border: 1px solid #777777;
+}
+
+.notebook h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.example {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #444444;
+}
+
+.example:last-of-type {
+  border-bottom: none;
+}
+
+.cipherText {
+  margin-bottom: 6px;
+  font-size: 22px;
+  line-height: 1.6;
+  color: #ff5555;
+}
+
+.translation {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #66aaff;
+}
+
+.exampleIndex {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #888888;
+}
+
+.empty {
+  color: #bbbbbb;
+  text-align: center;
+}
+
+.pageNumber {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #bbbbbb;
+  text-align: center;
+}
+
+.instruction {
+  font-size: 14px;
+  color: #bbbbbb;
+}
+
+.newBadge {
+  position: absolute;
+  left: 28%;
+  bottom: 28%;
+  z-index: 20;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: #e5d9a8;
+  pointer-events: none;
+}
