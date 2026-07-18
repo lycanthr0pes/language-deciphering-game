@@ -38,9 +38,19 @@ export type ExampleRecord = {
 
 export type SelectedAnswers = Partial<Record<string, string>>;
 
+export type TokenJudgement = "correct" | "incorrect";
+
+export type AnswerJudgement = {
+  isCorrect: boolean;
+  correctWordCount: number;
+  totalWordCount: number;
+  tokenResults: Record<string, TokenJudgement>;
+};
+
 export type GamePhase =
   | "introDialogue"
   | "exampleDialogue"
   | "question"
   | "answering"
+  | "answerFeedback"
   | "result";

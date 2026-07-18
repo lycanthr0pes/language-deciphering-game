@@ -1,12 +1,33 @@
-type Question = {
-  tokens: { id: string }[];
-  correctAnswers: Record<string, string>;
-};
+import type {
+  AnswerJudgement,
+  Question,
+  SelectedAnswers,
+  TokenJudgement,
+} from "./gameTypes";
 
-type SelectedAnswers = Partial<Record<string, string>>;
+export function judgeAnswer(
+  question: Question,
+  selectedAnswers: SelectedAnswers,
+): AnswerJudgement {
+  const tokenResults = Object.fromEntries(
+    question.tokens.map((token) => {
+      const result: TokenJudgement =
+        selectedAnswers[token.id] === question.correctAnswers[token.id]
+          ? "correct"
+          : "incorrect";
 
-export function judgeAnswer(question: Question, selectedAnswers: SelectedAnswers) {
-  return question.tokens.every((token) => {
-    return selectedAnswers[token.id] === question.correctAnswers[token.id];
-  });
+      return [token.id, result];
+    }),
+  );
+
+  const correctWordCount = Object.values(tokenResults).filter(
+    (result) => result === "correct",
+  ).length;
+
+  return {
+    isCorrect: correctWordCount === question.tokens.length,
+    correctWordCount,
+    totalWordCount: question.tokens.length,
+    tokenResults,
+  };
 }
