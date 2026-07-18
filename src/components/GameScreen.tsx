@@ -17,6 +17,7 @@ import type {
   Question,
 } from "@/lib/gameTypes";
 import { judgeAnswer } from "@/lib/judgeAnswer";
+import { playSound } from "@/lib/sound";
 import styles from "./GameScreen.module.css";
 
 const EXAMPLES_PER_PAGE = GAME_CONFIG.examplesPerNotebookPage;
@@ -98,6 +99,7 @@ export function GameScreen() {
     }
 
     setHasUnreadExamples(true);
+    playSound("writeNote");
   }
 
   function startRound(level: number) {
@@ -149,6 +151,7 @@ export function GameScreen() {
         event.preventDefault();
         if (isNotebookOpen) {
           setIsNotebookOpen(false);
+          playSound("closeNote");
         } else {
           const nextPageCount = Math.max(
             1,
@@ -202,11 +205,23 @@ export function GameScreen() {
 
       setIsNotebookOpen(false);
       setFeedbackOutcome(null);
+      // EndTitle 未実装のため、リザルト直前に end を1回だけ仮接続する。
+      playSound("end");
       setGamePhase("result");
     }, GAME_CONFIG.answerFeedbackMs);
 
     return () => window.clearTimeout(timerId);
   }, [feedbackOutcome, gamePhase, difficultyLevel]);
+
+  useEffect(() => {
+    if (!currentDialogue) return;
+    if (
+      currentDialogue.type === "cipher" ||
+      currentDialogue.type === "translation"
+    ) {
+      playSound("manTalk");
+    }
+  }, [currentDialogue, gamePhase]);
 
   function handleNextDialogue() {
     if (
@@ -217,6 +232,8 @@ export function GameScreen() {
       return;
     }
     if (isNotebookOpen) return;
+
+    playSound("dialogueNext");
 
     const nextIndex = dialogueIndex + 1;
 
