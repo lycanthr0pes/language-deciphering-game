@@ -53,12 +53,16 @@ export function GameScreen() {
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [endedAt, setEndedAt] = useState<number | null>(null);
+  const [examples, setExamples] = useState<ExampleRecord[]>([]);
+  const [isNotebookOpen, setIsNotebookOpen] = useState(false);
+  const [notebookPage, setNotebookPage] = useState(0);
+  const [hasUnreadExamples, setHasUnreadExamples] = useState(false);
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
 
   const pageCount = Math.max(
     1,
-    Math.ceil(examples.length / EXAMPLES_PER_PAGE),
+    Math.ceil(examples.length / GAME_CONFIG.examplesPerNotebookPage),
   );
 
   const clearTimeSeconds =
@@ -100,6 +104,90 @@ export function GameScreen() {
     setIsTimedOut(false);
     setGamePhase("exampleDialogue");
   }
+
+  function moveToLatestNotebookPage() {
+    setNotebookPage(pageCount - 1);
+  }
+
+  function notifyNewExamples() {
+    if (isNotebookOpen) {
+      moveToLatestNotebookPage();
+      setHasUnreadExamples(false);
+      return;
+    }
+
+    setHasUnreadExamples(true);
+  }
+
+  function openNotebook() {
+    moveToLatestNotebookPage();
+    setHasUnreadExamples(false);
+    setIsNotebookOpen(true);
+  }
+
+  function closeNotebook() {
+    if (!isNotebookOpen) return;
+
+    setIsNotebookOpen(false);
+  }
+
+  function toggleNotebook() {
+    if (isNotebookOpen) {
+      closeNotebook();
+      return;
+    }
+
+    openNotebook();
+  }
+
+  function moveNotebookPage(direction: -1 | 1) {
+    setNotebookPage((currentPage) =>
+      Math.min(Math.max(currentPage + direction, 0), pageCount - 1),
+    );
+  }
+
+  function canUseNotebook(phase: GamePhase) {
+    return (
+      phase === "introDialogue" ||
+      phase === "exampleDialogue" ||
+      phase === "question" ||
+      phase === "answering"
+    );
+  }
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      const isInteractiveTarget =
+        target instanceof HTMLElement &&
+        target.matches(
+          "button, input, select, textarea, [contenteditable='true']",
+        );
+
+      if (isInteractiveTarget) return;
+      if (!canUseNotebook(gamePhase)) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        toggleNotebook();
+        return;
+      }
+
+      if (!isNotebookOpen) return;
+
+      if (event.key === "a" || event.key === "A") {
+        moveNotebookPage(-1);
+        return;
+      }
+
+      if (event.key === "d" || event.key === "D") {
+        moveNotebookPage(1);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [gamePhase, isNotebookOpen, pageCount]);
 
   useEffect(() => {
     if (gamePhase !== "question" && gamePhase !== "answering") return;
@@ -168,6 +256,7 @@ export function GameScreen() {
   }, [gamePhase, isNotebookOpen, pageCount, examples.length]);
 
   function handleNextDialogue() {
+    if (isNotebookOpen) return;
     if (gamePhase === "result" || gamePhase === "answering") return;
     if (isNotebookOpen) return;
 
@@ -283,6 +372,10 @@ export function GameScreen() {
     setIsTimedOut(false);
     setStartedAt(Date.now());
     setEndedAt(null);
+    setExamples([]);
+    setIsNotebookOpen(false);
+    setNotebookPage(0);
+    setHasUnreadExamples(false);
   }
 
   function handleMainClick() {
@@ -296,10 +389,8 @@ export function GameScreen() {
 
   const instruction =
     gamePhase === "answering"
-      ? "暗号単語を選び、日本語を割り当ててください / Spaceで手帳"
-      : gamePhase === "introDialogue"
-        ? "左クリックで進む"
-        : "左クリックで進む / Spaceで手帳を開く";
+      ? "暗号単語を選び、日本語を割り当ててください"
+      : "左クリックで進む / Spaceで手帳";
 
   return (
     <main className={styles.screen} onClick={handleMainClick}>
@@ -336,7 +427,8 @@ export function GameScreen() {
             examples={examples}
             page={notebookPage}
             pageCount={pageCount}
-            examplesPerPage={EXAMPLES_PER_PAGE}
+            examplesPerPage={GAME_CONFIG.examplesPerNotebookPage}
+            newAnimationHalfCycleMs={GAME_CONFIG.newAnimationHalfCycleMs}
             showNew={hasUnreadExamples}
           />
         </>
