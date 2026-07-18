@@ -5,4 +5,5 @@ export const GAME_CONFIG = {
   warningTimeSeconds: 15,
   examplesPerNotebookPage: 2,
   answerFeedbackMs: 1400,
+  newAnimationHalfCycleMs: 900,
 } as const;
