@@ -18,6 +18,17 @@ import type {
 import { judgeAnswer } from "@/lib/judgeAnswer";
 import styles from "./GameScreen.module.css";
 
+const EXAMPLES_PER_PAGE = GAME_CONFIG.examplesPerNotebookPage;
+
+function canUseNotebook(phase: GamePhase) {
+  return (
+    phase === "introDialogue" ||
+    phase === "exampleDialogue" ||
+    phase === "question" ||
+    phase === "answering"
+  );
+}
+
 export function GameScreen() {
   const [dialogueLines, setDialogueLines] =
     useState<DialogueLine[]>(INTRO_DIALOGUES);
@@ -28,6 +39,10 @@ export function GameScreen() {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Partial<Record<string, string>>
   >({});
+  const [examples, setExamples] = useState<ExampleRecord[]>([]);
+  const [isNotebookOpen, setIsNotebookOpen] = useState(false);
+  const [notebookPage, setNotebookPage] = useState(0);
+  const [hasUnreadExamples, setHasUnreadExamples] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [mistakeCount, setMistakeCount] = useState(0);
   const [mistakesRemaining, setMistakesRemaining] = useState<number>(
@@ -57,6 +72,24 @@ export function GameScreen() {
 
   const canSubmitAnswer =
     currentQuestion?.tokens.every((token) => selectedAnswers[token.id]) ?? false;
+
+  function moveToLatestNotebookPage(exampleCount = examples.length) {
+    const nextPageCount = Math.max(
+      1,
+      Math.ceil(exampleCount / EXAMPLES_PER_PAGE),
+    );
+    setNotebookPage(nextPageCount - 1);
+  }
+
+  function notifyNewExamples() {
+    if (isNotebookOpen) {
+      moveToLatestNotebookPage();
+      setHasUnreadExamples(false);
+      return;
+    }
+
+    setHasUnreadExamples(true);
+  }
 
   function startRound(level: number) {
     const round = generateRound(level);
@@ -173,9 +206,59 @@ export function GameScreen() {
     return () => window.clearTimeout(timerId);
   }, [gamePhase, timeLeft]);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      const isInteractive =
+        target instanceof HTMLElement &&
+        target.matches(
+          "button, input, select, textarea, [contenteditable='true']",
+        );
+
+      if (isInteractive) return;
+      if (!canUseNotebook(gamePhase)) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        if (isNotebookOpen) {
+          setIsNotebookOpen(false);
+        } else {
+          const nextPageCount = Math.max(
+            1,
+            Math.ceil(examples.length / EXAMPLES_PER_PAGE),
+          );
+          setNotebookPage(nextPageCount - 1);
+          setHasUnreadExamples(false);
+          setIsNotebookOpen(true);
+        }
+        return;
+      }
+
+      if (!isNotebookOpen) return;
+
+      if (event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setNotebookPage((currentPage) =>
+          Math.min(Math.max(currentPage - 1, 0), pageCount - 1),
+        );
+      }
+
+      if (event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        setNotebookPage((currentPage) =>
+          Math.min(Math.max(currentPage + 1, 0), pageCount - 1),
+        );
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [gamePhase, isNotebookOpen, pageCount, examples.length]);
+
   function handleNextDialogue() {
     if (isNotebookOpen) return;
     if (gamePhase === "result" || gamePhase === "answering") return;
+    if (isNotebookOpen) return;
 
     const nextIndex = dialogueIndex + 1;
 
@@ -245,6 +328,7 @@ export function GameScreen() {
 
     if (difficultyLevel >= GAME_CONFIG.finalLevel) {
       setEndedAt((value) => value ?? Date.now());
+      setIsNotebookOpen(false);
       setGamePhase("result");
       return;
     }
@@ -261,6 +345,7 @@ export function GameScreen() {
 
     if (isTimedOut || mistakesRemaining <= 0) {
       setEndedAt((value) => value ?? Date.now());
+      setIsNotebookOpen(false);
       setGamePhase("result");
       return;
     }
@@ -275,6 +360,10 @@ export function GameScreen() {
     setCurrentQuestion(null);
     setSelectedAnswers({});
     setActiveTokenId(null);
+    setExamples([]);
+    setIsNotebookOpen(false);
+    setNotebookPage(0);
+    setHasUnreadExamples(false);
     setCorrectCount(0);
     setMistakeCount(0);
     setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
