@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
-import { ResultScreen } from "./ResultScreen";
-import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
@@ -17,21 +15,19 @@ export function GameScreen() {
     useState<DialogueLine[]>(INTRO_DIALOGUES);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [gamePhase, setGamePhase] = useState<GamePhase>("introDialogue");
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Partial<Record<string, string>>
-  >({});
+  const [difficultyLevel, setDifficultyLevel] = useState(1);
   const [correctCount, setCorrectCount] = useState(0);
   const [mistakeCount, setMistakeCount] = useState(0);
   const [mistakesRemaining, setMistakesRemaining] = useState<number>(
     GAME_CONFIG.safeMistakeCount,
   );
-  const [difficultyLevel, setDifficultyLevel] = useState(1);
-  const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.timeLimitSeconds);
-  const [isTimedOut, setIsTimedOut] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Partial<Record<string, string>>
+  >({});
 
-  const currentDialogue = dialogueLines[dialogueIndex] ?? null;
+  const currentDialogue = dialogueLines[dialogueIndex];
 
   const canSubmitAnswer =
     currentQuestion?.tokens.every((token) => selectedAnswers[token.id]) ?? false;
@@ -43,29 +39,11 @@ export function GameScreen() {
     setCurrentQuestion(round.question);
     setSelectedAnswers({});
     setActiveTokenId(null);
-    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
-    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
-    setIsTimedOut(false);
     setGamePhase("exampleDialogue");
   }
 
-  useEffect(() => {
-    if (gamePhase !== "question" && gamePhase !== "answering") return;
-
-    if (timeLeft <= 0) {
-      setIsTimedOut(true);
-      return;
-    }
-
-    const timerId = window.setTimeout(() => {
-      setTimeLeft((prev) => Math.max(prev - 1, 0));
-    }, 1000);
-
-    return () => window.clearTimeout(timerId);
-  }, [gamePhase, timeLeft]);
-
   function handleNextDialogue() {
-    if (gamePhase === "result" || gamePhase === "answering") return;
+    if (gamePhase === "question" || gamePhase === "result") return;
 
     const nextIndex = dialogueIndex + 1;
 
@@ -80,23 +58,7 @@ export function GameScreen() {
     }
 
     if (gamePhase === "exampleDialogue") {
-      if (!currentQuestion) return;
-
-      const questionLines: DialogueLine[] = [
-        {
-          id: "question-line",
-          text: currentQuestion.cipherText,
-          type: "cipher",
-        },
-      ];
-      setDialogueLines(questionLines);
-      setDialogueIndex(0);
       setGamePhase("question");
-      return;
-    }
-
-    if (gamePhase === "question") {
-      setGamePhase("answering");
     }
   }
 
@@ -116,6 +78,37 @@ export function GameScreen() {
     return currentQuestion.choiceCandidatesByTokenId[activeTokenId] ?? [];
   }
 
+  function handleCorrectAnswer() {
+    const nextCorrectCount = correctCount + 1;
+    setCorrectCount(nextCorrectCount);
+    setSelectedAnswers({});
+    setActiveTokenId(null);
+
+    if (difficultyLevel >= GAME_CONFIG.finalLevel) {
+      setGamePhase("result");
+      return;
+    }
+
+    const nextLevel = difficultyLevel + 1;
+    setDifficultyLevel(nextLevel);
+    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+    startRound(nextLevel);
+  }
+
+  function handleWrongAnswer() {
+    const nextMistakeCount = mistakeCount + 1;
+    setMistakeCount(nextMistakeCount);
+
+    if (mistakesRemaining <= 0) {
+      setGamePhase("result");
+      return;
+    }
+
+    setMistakesRemaining((prev) => Math.max(prev - 1, 0));
+    setSelectedAnswers({});
+    setActiveTokenId(null);
+  }
+
   function handleSubmitAnswer() {
     if (!currentQuestion || !canSubmitAnswer) return;
 
@@ -127,101 +120,40 @@ export function GameScreen() {
     handleWrongAnswer();
   }
 
-  function handleCorrectAnswer() {
-    setCorrectCount((prev) => prev + 1);
-    setSelectedAnswers({});
-    setActiveTokenId(null);
-
-    if (difficultyLevel >= GAME_CONFIG.finalLevel) {
-      setGamePhase("result");
-      return;
-    }
-
-    const nextLevel = difficultyLevel + 1;
-    setDifficultyLevel(nextLevel);
-    startRound(nextLevel);
-  }
-
-  function handleWrongAnswer() {
-    setMistakeCount((prev) => prev + 1);
-    setSelectedAnswers({});
-    setActiveTokenId(null);
-
-    if (isTimedOut || mistakesRemaining <= 0) {
-      setGamePhase("result");
-      return;
-    }
-
-    setMistakesRemaining((prev) => Math.max(prev - 1, 0));
-  }
-
-  function resetGame() {
-    setGamePhase("introDialogue");
-    setDialogueLines(INTRO_DIALOGUES);
-    setDialogueIndex(0);
-    setCurrentQuestion(null);
-    setSelectedAnswers({});
-    setActiveTokenId(null);
-    setCorrectCount(0);
-    setMistakeCount(0);
-    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
-    setDifficultyLevel(1);
-    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
-    setIsTimedOut(false);
-  }
-
-  function handleMainClick() {
-    if (gamePhase === "result") {
-      resetGame();
-      return;
-    }
-
-    handleNextDialogue();
-  }
-
-  const instruction =
-    gamePhase === "answering"
-      ? "暗号単語を選び、日本語を割り当ててください"
-      : "左クリックで進む";
-
   return (
-    <main className={styles.screen} onClick={handleMainClick}>
-      {gamePhase !== "result" ? (
+    <main className={styles.screen} onClick={handleNextDialogue}>
+      <div className={styles.status}>
+        正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能 {mistakesRemaining}
+      </div>
+      {gamePhase === "result" ? (
+        <div className={styles.result}>
+          <p>Lv{difficultyLevel >= GAME_CONFIG.finalLevel ? "8 クリア" : "ゲームオーバー"}</p>
+          <p>
+            正解 {correctCount} / 失敗 {mistakeCount}
+          </p>
+        </div>
+      ) : null}
+      {gamePhase !== "result" &&
+      (gamePhase === "introDialogue" || gamePhase === "exampleDialogue") ? (
+        <DialogueBox line={currentDialogue} instruction="左クリックで進む" />
+      ) : null}
+      {gamePhase === "question" && currentQuestion ? (
         <>
-          <div className={styles.status}>
-            正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
-            {mistakesRemaining}
-          </div>
-          {gamePhase === "question" || gamePhase === "answering" ? (
-            <TimerDisplay
-              timeLeft={timeLeft}
-              warningTime={GAME_CONFIG.warningTimeSeconds}
-              mistakesRemaining={mistakesRemaining}
-            />
-          ) : null}
-          {currentDialogue ? (
-            <DialogueBox line={currentDialogue} instruction={instruction} />
-          ) : null}
-          {gamePhase === "answering" && currentQuestion ? (
-            <ChoiceList
-              tokens={currentQuestion.tokens}
-              choices={getActiveChoices()}
-              selectedAnswers={selectedAnswers}
-              activeTokenId={activeTokenId}
-              canSubmit={canSubmitAnswer}
-              onSelectToken={handleSelectToken}
-              onSelectWord={handleSelectWord}
-              onSubmit={handleSubmitAnswer}
-            />
-          ) : null}
+          <p className={styles.cipherText}>
+            問題: {currentQuestion.cipherText}
+          </p>
+          <ChoiceList
+            tokens={currentQuestion.tokens}
+            choices={getActiveChoices()}
+            selectedAnswers={selectedAnswers}
+            activeTokenId={activeTokenId}
+            canSubmit={canSubmitAnswer}
+            onSelectToken={handleSelectToken}
+            onSelectWord={handleSelectWord}
+            onSubmit={handleSubmitAnswer}
+          />
         </>
-      ) : (
-        <ResultScreen
-          correctCount={correctCount}
-          mistakeCount={mistakeCount}
-          onRetry={resetGame}
-        />
-      )}
+      ) : null}
     </main>
   );
 }
