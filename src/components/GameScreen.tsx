@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
+import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
@@ -26,6 +27,8 @@ export function GameScreen() {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Partial<Record<string, string>>
   >({});
+  const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.timeLimitSeconds);
+  const [isTimedOut, setIsTimedOut] = useState(false);
 
   const currentDialogue = dialogueLines[dialogueIndex];
 
@@ -39,8 +42,25 @@ export function GameScreen() {
     setCurrentQuestion(round.question);
     setSelectedAnswers({});
     setActiveTokenId(null);
+    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
+    setIsTimedOut(false);
     setGamePhase("exampleDialogue");
   }
+
+  useEffect(() => {
+    if (gamePhase !== "question" && gamePhase !== "answering") return;
+
+    if (timeLeft <= 0) {
+      setIsTimedOut(true);
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setTimeLeft((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timerId);
+  }, [gamePhase, timeLeft]);
 
   function handleNextDialogue() {
     if (gamePhase === "question" || gamePhase === "result") return;
@@ -99,7 +119,7 @@ export function GameScreen() {
     const nextMistakeCount = mistakeCount + 1;
     setMistakeCount(nextMistakeCount);
 
-    if (mistakesRemaining <= 0) {
+    if (isTimedOut || mistakesRemaining <= 0) {
       setGamePhase("result");
       return;
     }
@@ -125,6 +145,13 @@ export function GameScreen() {
       <div className={styles.status}>
         正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能 {mistakesRemaining}
       </div>
+      {gamePhase === "question" || gamePhase === "answering" ? (
+        <TimerDisplay
+          timeLeft={timeLeft}
+          warningTime={GAME_CONFIG.warningTimeSeconds}
+          mistakesRemaining={mistakesRemaining}
+        />
+      ) : null}
       {gamePhase === "result" ? (
         <div className={styles.result}>
           <p>Lv{difficultyLevel >= GAME_CONFIG.finalLevel ? "8 クリア" : "ゲームオーバー"}</p>
