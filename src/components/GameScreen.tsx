@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
+import { Notebook } from "./Notebook";
 import { ResultScreen } from "./ResultScreen";
 import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
-import type { DialogueLine, GamePhase, Question } from "@/lib/gameTypes";
+import type {
+  DialogueLine,
+  ExampleRecord,
+  GamePhase,
+  Question,
+} from "@/lib/gameTypes";
 import { judgeAnswer } from "@/lib/judgeAnswer";
 import styles from "./GameScreen.module.css";
 
@@ -32,8 +38,17 @@ export function GameScreen() {
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [endedAt, setEndedAt] = useState<number | null>(null);
+  const [examples, setExamples] = useState<ExampleRecord[]>([]);
+  const [isNotebookOpen, setIsNotebookOpen] = useState(false);
+  const [notebookPage, setNotebookPage] = useState(0);
+  const [hasUnreadExamples, setHasUnreadExamples] = useState(false);
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
+
+  const pageCount = Math.max(
+    1,
+    Math.ceil(examples.length / GAME_CONFIG.examplesPerNotebookPage),
+  );
 
   const clearTimeSeconds =
     endedAt !== null
@@ -48,6 +63,7 @@ export function GameScreen() {
     setDialogueLines(round.dialogueLines);
     setDialogueIndex(0);
     setCurrentQuestion(round.question);
+    setExamples((prev) => [...prev, ...round.examples]);
     setSelectedAnswers({});
     setActiveTokenId(null);
     setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
@@ -55,6 +71,90 @@ export function GameScreen() {
     setIsTimedOut(false);
     setGamePhase("exampleDialogue");
   }
+
+  function moveToLatestNotebookPage() {
+    setNotebookPage(pageCount - 1);
+  }
+
+  function notifyNewExamples() {
+    if (isNotebookOpen) {
+      moveToLatestNotebookPage();
+      setHasUnreadExamples(false);
+      return;
+    }
+
+    setHasUnreadExamples(true);
+  }
+
+  function openNotebook() {
+    moveToLatestNotebookPage();
+    setHasUnreadExamples(false);
+    setIsNotebookOpen(true);
+  }
+
+  function closeNotebook() {
+    if (!isNotebookOpen) return;
+
+    setIsNotebookOpen(false);
+  }
+
+  function toggleNotebook() {
+    if (isNotebookOpen) {
+      closeNotebook();
+      return;
+    }
+
+    openNotebook();
+  }
+
+  function moveNotebookPage(direction: -1 | 1) {
+    setNotebookPage((currentPage) =>
+      Math.min(Math.max(currentPage + direction, 0), pageCount - 1),
+    );
+  }
+
+  function canUseNotebook(phase: GamePhase) {
+    return (
+      phase === "introDialogue" ||
+      phase === "exampleDialogue" ||
+      phase === "question" ||
+      phase === "answering"
+    );
+  }
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      const isInteractiveTarget =
+        target instanceof HTMLElement &&
+        target.matches(
+          "button, input, select, textarea, [contenteditable='true']",
+        );
+
+      if (isInteractiveTarget) return;
+      if (!canUseNotebook(gamePhase)) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        toggleNotebook();
+        return;
+      }
+
+      if (!isNotebookOpen) return;
+
+      if (event.key === "a" || event.key === "A") {
+        moveNotebookPage(-1);
+        return;
+      }
+
+      if (event.key === "d" || event.key === "D") {
+        moveNotebookPage(1);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [gamePhase, isNotebookOpen, pageCount]);
 
   useEffect(() => {
     if (gamePhase !== "question" && gamePhase !== "answering") return;
@@ -74,6 +174,7 @@ export function GameScreen() {
   }, [gamePhase, timeLeft]);
 
   function handleNextDialogue() {
+    if (isNotebookOpen) return;
     if (gamePhase === "result" || gamePhase === "answering") return;
 
     const nextIndex = dialogueIndex + 1;
@@ -100,6 +201,7 @@ export function GameScreen() {
       ];
       setDialogueLines(questionLines);
       setDialogueIndex(0);
+      notifyNewExamples();
       setGamePhase("question");
       return;
     }
@@ -181,6 +283,10 @@ export function GameScreen() {
     setIsTimedOut(false);
     setStartedAt(Date.now());
     setEndedAt(null);
+    setExamples([]);
+    setIsNotebookOpen(false);
+    setNotebookPage(0);
+    setHasUnreadExamples(false);
   }
 
   function handleMainClick() {
@@ -195,7 +301,7 @@ export function GameScreen() {
   const instruction =
     gamePhase === "answering"
       ? "暗号単語を選び、日本語を割り当ててください"
-      : "左クリックで進む";
+      : "左クリックで進む / Spaceで手帳";
 
   return (
     <main className={styles.screen} onClick={handleMainClick}>
@@ -227,6 +333,15 @@ export function GameScreen() {
               onSubmit={handleSubmitAnswer}
             />
           ) : null}
+          <Notebook
+            isOpen={isNotebookOpen}
+            examples={examples}
+            page={notebookPage}
+            pageCount={pageCount}
+            examplesPerPage={GAME_CONFIG.examplesPerNotebookPage}
+            newAnimationHalfCycleMs={GAME_CONFIG.newAnimationHalfCycleMs}
+            showNew={hasUnreadExamples}
+          />
         </>
       ) : (
         <ResultScreen

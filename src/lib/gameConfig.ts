@@ -3,4 +3,6 @@ export const GAME_CONFIG = {
   safeMistakeCount: 1,
   timeLimitSeconds: 90,
   warningTimeSeconds: 15,
+  examplesPerNotebookPage: 2,
+  newAnimationHalfCycleMs: 900,
 } as const;
