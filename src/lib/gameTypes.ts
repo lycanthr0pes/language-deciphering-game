@@ -39,8 +39,14 @@ export type ExampleRecord = {
 export type SelectedAnswers = Partial<Record<string, string>>;
 
 export type GamePhase =
+  | "opening"
   | "introDialogue"
   | "exampleDialogue"
   | "question"
   | "answering"
+  | "clearCutscene"
+  | "gameOverCutscene"
+  | "endTitle"
   | "result";
+
+export type ResultStatus = "clear" | "gameOver";

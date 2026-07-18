@@ -5,4 +5,12 @@ export const GAME_CONFIG = {
   warningTimeSeconds: 15,
   examplesPerNotebookPage: 2,
   newAnimationHalfCycleMs: 900,
+  cutsceneStepMs: 1200,
+  openingBlinkMs: 2300,
+  reducedMotionOpeningMs: 300,
+  openingAssetTimeoutMs: 5000,
+  shotFlashMs: 100,
+  gameOverTitleMs: 2300,
+  gameClearTitleMs: 2400,
+  reducedMotionEndTitleMs: 1500,
 } as const;
