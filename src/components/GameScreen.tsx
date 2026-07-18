@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
 import { ResultScreen } from "./ResultScreen";
+import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
@@ -27,6 +28,8 @@ export function GameScreen() {
     GAME_CONFIG.safeMistakeCount,
   );
   const [difficultyLevel, setDifficultyLevel] = useState(1);
+  const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.timeLimitSeconds);
+  const [isTimedOut, setIsTimedOut] = useState(false);
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
 
@@ -41,8 +44,25 @@ export function GameScreen() {
     setSelectedAnswers({});
     setActiveTokenId(null);
     setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
+    setIsTimedOut(false);
     setGamePhase("exampleDialogue");
   }
+
+  useEffect(() => {
+    if (gamePhase !== "question" && gamePhase !== "answering") return;
+
+    if (timeLeft <= 0) {
+      setIsTimedOut(true);
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setTimeLeft((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timerId);
+  }, [gamePhase, timeLeft]);
 
   function handleNextDialogue() {
     if (gamePhase === "result" || gamePhase === "answering") return;
@@ -127,7 +147,7 @@ export function GameScreen() {
     setSelectedAnswers({});
     setActiveTokenId(null);
 
-    if (mistakesRemaining <= 0) {
+    if (isTimedOut || mistakesRemaining <= 0) {
       setGamePhase("result");
       return;
     }
@@ -146,6 +166,8 @@ export function GameScreen() {
     setMistakeCount(0);
     setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
     setDifficultyLevel(1);
+    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
+    setIsTimedOut(false);
   }
 
   function handleMainClick() {
@@ -170,6 +192,13 @@ export function GameScreen() {
             正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
             {mistakesRemaining}
           </div>
+          {gamePhase === "question" || gamePhase === "answering" ? (
+            <TimerDisplay
+              timeLeft={timeLeft}
+              warningTime={GAME_CONFIG.warningTimeSeconds}
+              mistakesRemaining={mistakesRemaining}
+            />
+          ) : null}
           {currentDialogue ? (
             <DialogueBox line={currentDialogue} instruction={instruction} />
           ) : null}
