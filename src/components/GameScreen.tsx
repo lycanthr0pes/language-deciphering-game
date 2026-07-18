@@ -30,8 +30,15 @@ export function GameScreen() {
   const [difficultyLevel, setDifficultyLevel] = useState(1);
   const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.timeLimitSeconds);
   const [isTimedOut, setIsTimedOut] = useState(false);
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [endedAt, setEndedAt] = useState<number | null>(null);
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
+
+  const clearTimeSeconds =
+    endedAt !== null
+      ? Math.floor((endedAt - startedAt) / 1000)
+      : 0;
 
   const canSubmitAnswer =
     currentQuestion?.tokens.every((token) => selectedAnswers[token.id]) ?? false;
@@ -51,14 +58,16 @@ export function GameScreen() {
 
   useEffect(() => {
     if (gamePhase !== "question" && gamePhase !== "answering") return;
-
-    if (timeLeft <= 0) {
-      setIsTimedOut(true);
-      return;
-    }
+    if (timeLeft <= 0) return;
 
     const timerId = window.setTimeout(() => {
-      setTimeLeft((prev) => Math.max(prev - 1, 0));
+      setTimeLeft((prev) => {
+        const next = Math.max(prev - 1, 0);
+        if (next === 0) {
+          setIsTimedOut(true);
+        }
+        return next;
+      });
     }, 1000);
 
     return () => window.clearTimeout(timerId);
@@ -133,6 +142,7 @@ export function GameScreen() {
     setActiveTokenId(null);
 
     if (difficultyLevel >= GAME_CONFIG.finalLevel) {
+      setEndedAt((value) => value ?? Date.now());
       setGamePhase("result");
       return;
     }
@@ -148,6 +158,7 @@ export function GameScreen() {
     setActiveTokenId(null);
 
     if (isTimedOut || mistakesRemaining <= 0) {
+      setEndedAt((value) => value ?? Date.now());
       setGamePhase("result");
       return;
     }
@@ -168,6 +179,8 @@ export function GameScreen() {
     setDifficultyLevel(1);
     setTimeLeft(GAME_CONFIG.timeLimitSeconds);
     setIsTimedOut(false);
+    setStartedAt(Date.now());
+    setEndedAt(null);
   }
 
   function handleMainClick() {
@@ -217,6 +230,7 @@ export function GameScreen() {
         </>
       ) : (
         <ResultScreen
+          clearTimeSeconds={clearTimeSeconds}
           correctCount={correctCount}
           mistakeCount={mistakeCount}
           onRetry={resetGame}
