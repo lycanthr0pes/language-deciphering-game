@@ -10,6 +10,7 @@ import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
 import type {
+  AnswerJudgement,
   DialogueLine,
   ExampleRecord,
   GamePhase,
@@ -19,6 +20,8 @@ import { judgeAnswer } from "@/lib/judgeAnswer";
 import styles from "./GameScreen.module.css";
 
 const EXAMPLES_PER_PAGE = GAME_CONFIG.examplesPerNotebookPage;
+
+type FeedbackOutcome = "nextRound" | "retry" | "clear" | "gameOver";
 
 function canUseNotebook(phase: GamePhase) {
   return (
@@ -39,6 +42,10 @@ export function GameScreen() {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Partial<Record<string, string>>
   >({});
+  const [answerJudgement, setAnswerJudgement] =
+    useState<AnswerJudgement | null>(null);
+  const [feedbackOutcome, setFeedbackOutcome] =
+    useState<FeedbackOutcome | null>(null);
   const [examples, setExamples] = useState<ExampleRecord[]>([]);
   const [isNotebookOpen, setIsNotebookOpen] = useState(false);
   const [notebookPage, setNotebookPage] = useState(0);
@@ -66,8 +73,14 @@ export function GameScreen() {
       ? Math.floor((endedAt - startedAt) / 1000)
       : 0;
 
+  const allTokensAnswered =
+    currentQuestion?.tokens.every((token) => selectedAnswers[token.id]) ??
+    false;
+
   const canSubmitAnswer =
-    currentQuestion?.tokens.every((token) => selectedAnswers[token.id]) ?? false;
+    gamePhase === "answering" &&
+    allTokensAnswered &&
+    answerJudgement === null;
 
   function moveToLatestNotebookPage(exampleCount = examples.length) {
     const nextPageCount = Math.max(
@@ -95,6 +108,8 @@ export function GameScreen() {
     setExamples((prev) => [...prev, ...round.examples]);
     setSelectedAnswers({});
     setActiveTokenId(null);
+    setAnswerJudgement(null);
+    setFeedbackOutcome(null);
     setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
     setTimeLeft(GAME_CONFIG.timeLimitSeconds);
     setIsTimedOut(false);
@@ -167,8 +182,39 @@ export function GameScreen() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gamePhase, isNotebookOpen, pageCount, examples.length]);
 
+  useEffect(() => {
+    if (gamePhase !== "answerFeedback" || !feedbackOutcome) return;
+
+    const timerId = window.setTimeout(() => {
+      if (feedbackOutcome === "retry") {
+        setFeedbackOutcome(null);
+        setGamePhase("answering");
+        return;
+      }
+
+      if (feedbackOutcome === "nextRound") {
+        const nextLevel = difficultyLevel + 1;
+        setDifficultyLevel(nextLevel);
+        startRound(nextLevel);
+        return;
+      }
+
+      setIsNotebookOpen(false);
+      setFeedbackOutcome(null);
+      setGamePhase("result");
+    }, GAME_CONFIG.answerFeedbackMs);
+
+    return () => window.clearTimeout(timerId);
+  }, [feedbackOutcome, gamePhase, difficultyLevel]);
+
   function handleNextDialogue() {
-    if (gamePhase === "result" || gamePhase === "answering") return;
+    if (
+      gamePhase === "result" ||
+      gamePhase === "answering" ||
+      gamePhase === "answerFeedback"
+    ) {
+      return;
+    }
     if (isNotebookOpen) return;
 
     const nextIndex = dialogueIndex + 1;
@@ -206,14 +252,20 @@ export function GameScreen() {
   }
 
   function handleSelectToken(tokenId: string) {
+    if (gamePhase === "answerFeedback") return;
     setActiveTokenId(tokenId);
   }
 
   function handleSelectWord(tokenId: string, value: string) {
+    if (gamePhase === "answerFeedback") return;
+    if (selectedAnswers[tokenId] === value) return;
+
     setSelectedAnswers((prev) => ({
       ...prev,
       [tokenId]: value,
     }));
+    setAnswerJudgement(null);
+    setFeedbackOutcome(null);
   }
 
   function getActiveChoices() {
@@ -222,46 +274,35 @@ export function GameScreen() {
   }
 
   function handleSubmitAnswer() {
-    if (!currentQuestion || !canSubmitAnswer) return;
+    if (!currentQuestion || !canSubmitAnswer || answerJudgement) return;
 
-    if (judgeAnswer(currentQuestion, selectedAnswers)) {
-      handleCorrectAnswer();
+    const judgement = judgeAnswer(currentQuestion, selectedAnswers);
+    setAnswerJudgement(judgement);
+    setGamePhase("answerFeedback");
+
+    if (judgement.isCorrect) {
+      setCorrectCount((count) => count + 1);
+
+      if (difficultyLevel >= GAME_CONFIG.finalLevel) {
+        setEndedAt((value) => value ?? Date.now());
+        setFeedbackOutcome("clear");
+        return;
+      }
+
+      setFeedbackOutcome("nextRound");
       return;
     }
 
-    handleWrongAnswer();
-  }
-
-  function handleCorrectAnswer() {
-    setCorrectCount((prev) => prev + 1);
-    setSelectedAnswers({});
-    setActiveTokenId(null);
-
-    if (difficultyLevel >= GAME_CONFIG.finalLevel) {
-      setEndedAt((value) => value ?? Date.now());
-      setIsNotebookOpen(false);
-      setGamePhase("result");
-      return;
-    }
-
-    const nextLevel = difficultyLevel + 1;
-    setDifficultyLevel(nextLevel);
-    startRound(nextLevel);
-  }
-
-  function handleWrongAnswer() {
-    setMistakeCount((prev) => prev + 1);
-    setSelectedAnswers({});
-    setActiveTokenId(null);
+    setMistakeCount((count) => count + 1);
 
     if (isTimedOut || mistakesRemaining <= 0) {
       setEndedAt((value) => value ?? Date.now());
-      setIsNotebookOpen(false);
-      setGamePhase("result");
+      setFeedbackOutcome("gameOver");
       return;
     }
 
-    setMistakesRemaining((prev) => Math.max(prev - 1, 0));
+    setMistakesRemaining((count) => Math.max(count - 1, 0));
+    setFeedbackOutcome("retry");
   }
 
   function resetGame() {
@@ -271,6 +312,8 @@ export function GameScreen() {
     setCurrentQuestion(null);
     setSelectedAnswers({});
     setActiveTokenId(null);
+    setAnswerJudgement(null);
+    setFeedbackOutcome(null);
     setExamples([]);
     setIsNotebookOpen(false);
     setNotebookPage(0);
@@ -295,11 +338,22 @@ export function GameScreen() {
   }
 
   const instruction =
-    gamePhase === "answering"
-      ? "暗号単語を選び、日本語を割り当ててください / Spaceで手帳"
-      : gamePhase === "introDialogue"
-        ? "左クリックで進む"
-        : "左クリックで進む / Spaceで手帳を開く";
+    gamePhase === "answerFeedback"
+      ? "判定結果を表示中"
+      : gamePhase === "answering"
+        ? "暗号単語を選び、日本語を割り当ててください / Spaceで手帳"
+        : gamePhase === "introDialogue"
+          ? "左クリックで進む"
+          : "左クリックで進む / Spaceで手帳を開く";
+
+  const showTimer =
+    gamePhase === "question" ||
+    gamePhase === "answering" ||
+    gamePhase === "answerFeedback";
+
+  const showChoiceList =
+    (gamePhase === "answering" || gamePhase === "answerFeedback") &&
+    currentQuestion;
 
   return (
     <main className={styles.screen} onClick={handleMainClick}>
@@ -309,7 +363,7 @@ export function GameScreen() {
             正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
             {mistakesRemaining}
           </div>
-          {gamePhase === "question" || gamePhase === "answering" ? (
+          {showTimer ? (
             <TimerDisplay
               timeLeft={timeLeft}
               warningTime={GAME_CONFIG.warningTimeSeconds}
@@ -319,13 +373,15 @@ export function GameScreen() {
           {currentDialogue ? (
             <DialogueBox line={currentDialogue} instruction={instruction} />
           ) : null}
-          {gamePhase === "answering" && currentQuestion ? (
+          {showChoiceList ? (
             <ChoiceList
               tokens={currentQuestion.tokens}
               choices={getActiveChoices()}
               selectedAnswers={selectedAnswers}
               activeTokenId={activeTokenId}
               canSubmit={canSubmitAnswer}
+              disabled={gamePhase === "answerFeedback"}
+              judgement={answerJudgement}
               onSelectToken={handleSelectToken}
               onSelectWord={handleSelectWord}
               onSubmit={handleSubmitAnswer}

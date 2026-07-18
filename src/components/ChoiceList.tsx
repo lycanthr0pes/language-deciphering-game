@@ -1,3 +1,4 @@
+import type { AnswerJudgement } from "@/lib/gameTypes";
 import styles from "./ChoiceList.module.css";
 
 type QuestionToken = {
@@ -7,11 +8,12 @@ type QuestionToken = {
 
 type ChoiceListProps = {
   tokens: QuestionToken[];
-  // 選択中の暗号単語に対応する内部カテゴリ内の候補だけを受け取る。
   choices: string[];
   selectedAnswers: Partial<Record<string, string>>;
   activeTokenId: string | null;
   canSubmit: boolean;
+  disabled: boolean;
+  judgement: AnswerJudgement | null;
   onSelectToken: (tokenId: string) => void;
   onSelectWord: (tokenId: string, value: string) => void;
   onSubmit: () => void;
@@ -23,26 +25,47 @@ export function ChoiceList({
   selectedAnswers,
   activeTokenId,
   canSubmit,
+  disabled,
+  judgement,
   onSelectToken,
   onSelectWord,
   onSubmit,
 }: ChoiceListProps) {
   return (
     <div className={styles.list} onClick={(event) => event.stopPropagation()}>
+      {judgement ? (
+        <p className={styles.judgementCount} aria-live="polite">
+          正答 {judgement.correctWordCount} / {judgement.totalWordCount}
+        </p>
+      ) : null}
+
       <div className={styles.tokens}>
         {tokens.map((token) => {
           const isActive = activeTokenId === token.id;
           const answer = selectedAnswers[token.id];
+          const result = judgement?.tokenResults[token.id];
+          const answerClass =
+            result === "correct"
+              ? styles.correctAnswer
+              : result === "incorrect"
+                ? styles.incorrectAnswer
+                : styles.answer;
 
           return (
             <button
               key={token.id}
               className={isActive ? styles.activeToken : styles.token}
               type="button"
+              disabled={disabled}
               onClick={() => onSelectToken(token.id)}
             >
               <span className={styles.cipher}>{token.cipher}</span>
-              <span className={styles.answer}>{answer ?? "未選択"}</span>
+              <span className={answerClass}>{answer ?? "未選択"}</span>
+              {result ? (
+                <span className={styles.resultLabel}>
+                  {result === "correct" ? "正答" : "誤答"}
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -54,7 +77,7 @@ export function ChoiceList({
             key={choice}
             className={styles.wordButton}
             type="button"
-            disabled={activeTokenId === null}
+            disabled={disabled || activeTokenId === null}
             onClick={() => {
               if (activeTokenId === null) return;
               onSelectWord(activeTokenId, choice);
@@ -68,7 +91,7 @@ export function ChoiceList({
       <button
         className={canSubmit ? styles.submitButton : styles.disabledSubmitButton}
         type="button"
-        disabled={!canSubmit}
+        disabled={disabled || !canSubmit}
         onClick={onSubmit}
       >
         解答する
