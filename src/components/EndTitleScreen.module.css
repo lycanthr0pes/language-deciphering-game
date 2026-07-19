@@ -1,0 +1,145 @@
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #020202;
+  pointer-events: all;
+  animation: endTitleCompletion var(--end-title-duration) linear;
+}
+
+.root h1 {
+  margin: 0;
+  font-size: clamp(56px, 8vw, 128px);
+  white-space: nowrap;
+}
+
+.gameOverTitle {
+  color: #b23a3a;
+  font-family: sans-serif;
+  text-shadow: 0 0 18px rgba(178, 58, 58, 0.4);
+  animation: gameOverImpact var(--end-title-duration) both;
+}
+
+.clearTitle {
+  position: relative;
+  overflow: hidden;
+  color: #e7e0c3;
+  font-family: serif;
+  animation: gameClearReveal var(--end-title-duration) both;
+}
+
+.clearTitle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(219, 193, 117, 0.75),
+    transparent 80%
+  );
+  transform: translateX(-130%);
+  mix-blend-mode: screen;
+  animation: clearLight var(--end-title-duration) both;
+}
+
+@keyframes endTitleCompletion {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.999;
+  }
+}
+
+@keyframes gameOverImpact {
+  0% {
+    opacity: 0;
+    filter: blur(12px);
+    transform: scale(1.35);
+  }
+  7.8% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  10.5% {
+    transform: translateX(-8px);
+  }
+  12.5% {
+    transform: translateX(6px);
+  }
+  14.5% {
+    transform: translateX(-3px);
+  }
+  16.5%,
+  82.6% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes gameClearReveal {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(18px);
+    letter-spacing: 0.55em;
+  }
+  20.8% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+  29.2%,
+  83.3% {
+    opacity: 1;
+    letter-spacing: 0.18em;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes clearLight {
+  20.8% {
+    transform: translateX(-130%);
+  }
+  45.8% {
+    transform: translateX(130%);
+  }
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameOverTitle,
+  .clearTitle {
+    animation: reducedTitle var(--end-title-duration) both;
+  }
+
+  .clearTitle::after {
+    animation: none;
+  }
+}
+
+@keyframes reducedTitle {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

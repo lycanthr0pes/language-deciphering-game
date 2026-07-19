@@ -8,6 +8,43 @@
   align-items: center;
   justify-content: center;
   gap: 24px;
+  overflow: hidden;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gameUi {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.backgroundImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.manImage {
+  position: absolute;
+  right: 8%;
+  bottom: 8%;
+  width: min(28vw, 420px);
+  height: auto;
 }
 
 .status {
@@ -17,12 +54,6 @@
   transform: translateX(-50%);
   font-size: 14px;
   color: #bbbbbb;
-}
-
-.cipherText {
-  font-size: 28px;
-  line-height: 1.6;
-  color: #ff5555;
 }
 
 .cipherText {

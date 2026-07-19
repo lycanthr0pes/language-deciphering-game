@@ -1,0 +1,42 @@
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050505;
+}
+
+.dark {
+  background: #000000;
+}
+
+.text {
+  margin: 0;
+  font-size: 24px;
+  color: #f0e6d2;
+}
+
+.shotFlash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  pointer-events: none;
+  animation: shotFlash var(--shot-flash-duration) ease-out forwards;
+}
+
+@keyframes shotFlash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shotFlash {
+    display: none;
+  }
+}

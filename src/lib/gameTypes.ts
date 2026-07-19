@@ -48,9 +48,15 @@ export type AnswerJudgement = {
 };
 
 export type GamePhase =
+  | "opening"
   | "introDialogue"
   | "exampleDialogue"
   | "question"
   | "answering"
   | "answerFeedback"
+  | "clearCutscene"
+  | "gameOverCutscene"
+  | "endTitle"
   | "result";
+
+export type ResultStatus = "clear" | "gameOver";

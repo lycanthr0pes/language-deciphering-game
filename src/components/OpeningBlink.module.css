@@ -1,0 +1,85 @@
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  pointer-events: all;
+  animation: openingCompletion var(--opening-duration) linear;
+}
+
+.eyelidOverlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  --aperture-y: 0%;
+  -webkit-mask-image: radial-gradient(
+    ellipse 50% var(--aperture-y) at 50% 50%,
+    transparent 0%,
+    transparent 100%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 50% var(--aperture-y) at 50% 50%,
+    transparent 0%,
+    transparent 100%,
+    #000 100%
+  );
+  animation: blinkAperture var(--opening-duration) ease-in-out forwards;
+}
+
+@property --aperture-y {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@keyframes openingCompletion {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.999;
+  }
+}
+
+@keyframes blinkAperture {
+  0%,
+  13% {
+    --aperture-y: 0%;
+  }
+  28% {
+    --aperture-y: 14%;
+  }
+  36% {
+    --aperture-y: 0%;
+  }
+  54% {
+    --aperture-y: 26%;
+  }
+  61% {
+    --aperture-y: 3%;
+  }
+  100% {
+    --aperture-y: 60%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    background: #000;
+    animation: reducedOpening var(--opening-duration) ease-out forwards;
+  }
+
+  .eyelidOverlay {
+    display: none;
+  }
+}
+
+@keyframes reducedOpening {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
