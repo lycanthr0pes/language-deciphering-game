@@ -188,6 +188,7 @@ export function GameScreen() {
           setNotebookPage(nextPageCount - 1);
           setHasUnreadExamples(false);
           setIsNotebookOpen(true);
+          playSound("openNote");
         }
         return;
       }
@@ -196,23 +197,27 @@ export function GameScreen() {
 
       if (event.key === "a" || event.key === "A") {
         event.preventDefault();
-        setNotebookPage((currentPage) =>
-          Math.min(Math.max(currentPage - 1, 0), pageCount - 1),
-        );
+        const nextPage = Math.min(Math.max(notebookPage - 1, 0), pageCount - 1);
+        if (nextPage !== notebookPage) {
+          playSound("openNote");
+          setNotebookPage(nextPage);
+        }
         return;
       }
 
       if (event.key === "d" || event.key === "D") {
         event.preventDefault();
-        setNotebookPage((currentPage) =>
-          Math.min(Math.max(currentPage + 1, 0), pageCount - 1),
-        );
+        const nextPage = Math.min(Math.max(notebookPage + 1, 0), pageCount - 1);
+        if (nextPage !== notebookPage) {
+          playSound("openNote");
+          setNotebookPage(nextPage);
+        }
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [gamePhase, isNotebookOpen, pageCount, examples.length]);
+  }, [gamePhase, isNotebookOpen, notebookPage, pageCount, examples.length]);
 
   useEffect(() => {
     if (gamePhase !== "answerFeedback" || !feedbackOutcome) return;

@@ -5,7 +5,8 @@ export type SoundKey =
   | "drawGun"
   | "gunShot"
   | "end"
-  | "closeNote";
+  | "closeNote"
+  | "openNote";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -17,11 +18,13 @@ const SOUND_PATHS: Record<SoundKey, string> = {
   gunShot: `${BASE_PATH}/assets/sounds/gun-shot.mp3`,
   end: `${BASE_PATH}/assets/sounds/end.mp3`,
   closeNote: `${BASE_PATH}/assets/sounds/close-note.mp3`,
+  openNote: `${BASE_PATH}/assets/sounds/open-note.mp3`,
 };
 
 const SOUND_VOLUMES: Partial<Record<SoundKey, number>> = {
   end: 0.8,
   closeNote: 0.7,
+  openNote: 0.7,
 };
 
 const audioCache = new Map<SoundKey, HTMLAudioElement>();
