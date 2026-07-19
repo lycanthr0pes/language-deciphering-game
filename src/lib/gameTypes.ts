@@ -54,4 +54,9 @@ export type GamePhase =
   | "question"
   | "answering"
   | "answerFeedback"
+  | "clearCutscene"
+  | "gameOverCutscene"
+  | "endTitle"
   | "result";
+
+export type ResultStatus = "clear" | "gameOver";
