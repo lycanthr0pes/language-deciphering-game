@@ -407,6 +407,7 @@ export function GameScreen() {
       return;
     }
 
+    playSound("wrongAnswer");
     setMistakeCount((count) => count + 1);
 
     if (isTimedOut || mistakesRemaining <= 0) {

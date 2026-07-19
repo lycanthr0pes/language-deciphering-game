@@ -6,7 +6,8 @@ export type SoundKey =
   | "gunShot"
   | "end"
   | "closeNote"
-  | "openNote";
+  | "openNote"
+  | "wrongAnswer";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -19,6 +20,7 @@ const SOUND_PATHS: Record<SoundKey, string> = {
   end: `${BASE_PATH}/assets/sounds/end.mp3`,
   closeNote: `${BASE_PATH}/assets/sounds/close-note.mp3`,
   openNote: `${BASE_PATH}/assets/sounds/open-note.mp3`,
+  wrongAnswer: `${BASE_PATH}/assets/sounds/wrong-answer.mp3`,
 };
 
 const SOUND_VOLUMES: Partial<Record<SoundKey, number>> = {
