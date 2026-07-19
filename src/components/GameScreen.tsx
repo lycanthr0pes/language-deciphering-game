@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
+import { CutsceneScreen } from "./CutsceneScreen";
 import { DialogueBox } from "./DialogueBox";
-import { Notebook } from "./Notebook";
-import { OpeningBlink } from "./OpeningBlink";
+import { EndTitleScreen } from "./EndTitleScreen";
+import { Notebook } from "./Notebook";import { OpeningBlink } from "./OpeningBlink";
 import { ResultScreen } from "./ResultScreen";
 import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
@@ -16,8 +17,8 @@ import type {
   ExampleRecord,
   GamePhase,
   Question,
-} from "@/lib/gameTypes";
-import { judgeAnswer } from "@/lib/judgeAnswer";
+  ResultStatus,
+} from "@/lib/gameTypes";import { judgeAnswer } from "@/lib/judgeAnswer";
 import { playSound } from "@/lib/sound";
 import styles from "./GameScreen.module.css";
 
@@ -69,9 +70,10 @@ export function GameScreen() {
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [endedAt, setEndedAt] = useState<number | null>(null);
+  const [cutsceneStep, setCutsceneStep] = useState(0);
+  const [resultStatus, setResultStatus] = useState<ResultStatus | null>(null);
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
-
   const pageCount = Math.max(
     1,
     Math.ceil(examples.length / EXAMPLES_PER_PAGE),
@@ -229,18 +231,46 @@ export function GameScreen() {
         return;
       }
 
+      const outcome = feedbackOutcome;
       setIsNotebookOpen(false);
       setFeedbackOutcome(null);
-      // EndTitle 未実装のため、リザルト直前に end を1回だけ仮接続する。
-      playSound("end");
-      setGamePhase("result");
-    }, GAME_CONFIG.answerFeedbackMs);
 
+      if (outcome === "clear") {
+        setResultStatus("clear");
+        setCutsceneStep(0);
+        setGamePhase("clearCutscene");
+        return;
+      }
+
+      if (outcome === "gameOver") {
+        setResultStatus("gameOver");
+        setCutsceneStep(0);
+        setGamePhase("gameOverCutscene");
+      }
+    }, GAME_CONFIG.answerFeedbackMs);
     return () => window.clearTimeout(timerId);
   }, [feedbackOutcome, gamePhase, difficultyLevel]);
 
   useEffect(() => {
-    if (!currentDialogue) return;
+    if (gamePhase !== "gameOverCutscene" && gamePhase !== "clearCutscene") {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      if (cutsceneStep >= 2) {
+        setCutsceneStep(0);
+        playSound("end");
+        setGamePhase("endTitle");
+        return;
+      }
+
+      setCutsceneStep((prev) => prev + 1);
+    }, GAME_CONFIG.cutsceneStepMs);
+
+    return () => window.clearTimeout(timerId);
+  }, [gamePhase, cutsceneStep]);
+
+  useEffect(() => {    if (!currentDialogue) return;
     if (
       currentDialogue.type === "cipher" ||
       currentDialogue.type === "translation"
@@ -252,11 +282,13 @@ export function GameScreen() {
   function handleNextDialogue() {
     if (
       gamePhase === "opening" ||
+      gamePhase === "endTitle" ||
+      gamePhase === "clearCutscene" ||
+      gamePhase === "gameOverCutscene" ||
       gamePhase === "result" ||
       gamePhase === "answering" ||
       gamePhase === "answerFeedback"
-    ) {
-      return;
+    ) {      return;
     }
     if (isNotebookOpen) return;
 
@@ -372,12 +404,21 @@ export function GameScreen() {
     setIsTimedOut(false);
     setStartedAt(Date.now());
     setEndedAt(null);
+    setCutsceneStep(0);
+    setResultStatus(null);
     setReducedMotion(getPrefersReducedMotion());
   }
 
   function handleMainClick() {
-    if (gamePhase === "opening") return;
-
+    if (
+      gamePhase === "opening" ||
+      gamePhase === "endTitle" ||
+      gamePhase === "clearCutscene" ||
+      gamePhase === "gameOverCutscene" ||
+      gamePhase === "answerFeedback"
+    ) {
+      return;
+    }
     if (gamePhase === "result") {
       resetGame();
       return;
@@ -414,8 +455,24 @@ export function GameScreen() {
           reducedMotion={reducedMotion}
           onComplete={handleOpeningComplete}
         />
-      ) : gamePhase !== "result" ? (
-        <>
+      ) : gamePhase === "clearCutscene" || gamePhase === "gameOverCutscene" ? (
+        resultStatus ? (
+          <CutsceneScreen type={resultStatus} step={cutsceneStep} />
+        ) : null
+      ) : gamePhase === "endTitle" && resultStatus ? (
+        <EndTitleScreen
+          status={resultStatus}
+          reducedMotion={reducedMotion}
+          onComplete={() => setGamePhase("result")}
+        />
+      ) : gamePhase === "result" ? (
+        <ResultScreen
+          clearTimeSeconds={clearTimeSeconds}
+          correctCount={correctCount}
+          mistakeCount={mistakeCount}
+          onRetry={resetGame}
+        />
+      ) : (        <>
           <div className={styles.status}>
             正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
             {mistakesRemaining}
@@ -454,13 +511,6 @@ export function GameScreen() {
             showNew={hasUnreadExamples}
           />
         </>
-      ) : (
-        <ResultScreen
-          clearTimeSeconds={clearTimeSeconds}
-          correctCount={correctCount}
-          mistakeCount={mistakeCount}
-          onRetry={resetGame}
-        />
       )}
     </main>
   );

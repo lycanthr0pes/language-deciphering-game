@@ -8,4 +8,9 @@ export const GAME_CONFIG = {
   newAnimationHalfCycleMs: 900,
   openingBlinkMs: 2300,
   reducedMotionOpeningMs: 300,
+  cutsceneStepMs: 1200,
+  shotFlashMs: 100,
+  gameOverTitleMs: 2300,
+  gameClearTitleMs: 2400,
+  reducedMotionEndTitleMs: 1500,
 } as const;
