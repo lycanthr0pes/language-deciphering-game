@@ -239,6 +239,7 @@ export function GameScreen() {
         setResultStatus("clear");
         setCutsceneStep(0);
         setGamePhase("clearCutscene");
+        playSound("drawGun");
         return;
       }
 
@@ -246,6 +247,7 @@ export function GameScreen() {
         setResultStatus("gameOver");
         setCutsceneStep(0);
         setGamePhase("gameOverCutscene");
+        playSound("drawGun");
       }
     }, GAME_CONFIG.answerFeedbackMs);
     return () => window.clearTimeout(timerId);
@@ -257,6 +259,10 @@ export function GameScreen() {
     }
 
     const timerId = window.setTimeout(() => {
+      if (cutsceneStep === 1) {
+        playSound("gunShot");
+      }
+
       if (cutsceneStep >= 2) {
         setCutsceneStep(0);
         playSound("end");
