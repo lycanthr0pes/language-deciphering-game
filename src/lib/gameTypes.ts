@@ -48,6 +48,7 @@ export type AnswerJudgement = {
 };
 
 export type GamePhase =
+  | "opening"
   | "introDialogue"
   | "exampleDialogue"
   | "question"

@@ -6,4 +6,6 @@ export const GAME_CONFIG = {
   examplesPerNotebookPage: 2,
   answerFeedbackMs: 1400,
   newAnimationHalfCycleMs: 900,
+  openingBlinkMs: 2300,
+  reducedMotionOpeningMs: 300,
 } as const;

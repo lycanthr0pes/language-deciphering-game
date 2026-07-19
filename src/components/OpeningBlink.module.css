@@ -1,0 +1,251 @@
+/*
+  調整用パラメータ（.root の CSS 変数）
+  A (--blink-a): くり抜き長径（水平半径。要素幅に対する %）
+  B (--blink-b): くり抜き短径（単位なし。基準高さ --blink-ref に対する %）
+  C (--blink-c): 閉じた基準位置（単位なし。基準高さ --blink-ref に対する %）
+                 プラス=まぶたが中央へ寄る。下まぶたは符号反転
+  E (--blink-e1/e2/e3): 基準 C からの開き量（単位なし。同上）
+                 上: C - E、下: -C + E
+  E速度 (--blink-e1/e2/e3-speed): 各瞬きの開閉の速さ（1=基準、0.5=半分の速さ＝約2倍の時間）
+  H (--blink-base-h): くり抜き側の基本高さ（画面中央付近）
+  余裕 (--blink-extra): C でずらしても上下端が欠けない外側マージン
+*/
+.root {
+  container-type: size;
+  --blink-a: 150%;
+  --blink-b: 60;
+  --blink-c: 90;
+  --blink-e1: 70;
+  --blink-e2: 90;
+  --blink-e3: 500;
+  --blink-e1-speed: 0.5;
+  --blink-e2-speed: 0.5;
+  --blink-e3-speed: 0.5;
+  --blink-base-h: 58%;
+  /* 旧 height:58% 時と同じ移動量・短径になるよう、要素高さ%に依存させない */
+  --blink-ref: 58cqh;
+  --blink-b-size: calc(var(--blink-ref) * var(--blink-b) / 100);
+  --blink-move-c: calc(var(--blink-ref) * var(--blink-c) / 100);
+  --blink-move-e1: calc(var(--blink-ref) * var(--blink-e1) / 100);
+  --blink-move-e2: calc(var(--blink-ref) * var(--blink-e2) / 100);
+  --blink-move-e3: calc(var(--blink-ref) * var(--blink-e3) / 100);
+  /* C 分のずれ + 余裕 */
+  --blink-extra: calc(var(--blink-move-c) + 20cqh);
+  /*
+    基準タイムライン（opening-duration に対する割合）
+    初期待ち 13% / 細い開閉 23% / 半分開閉 25% / 全開 39%
+  */
+  --blink-hold-duration: calc(var(--opening-duration) * 0.13);
+  --blink-e1-duration: calc(
+    var(--opening-duration) * 0.23 / var(--blink-e1-speed)
+  );
+  --blink-e2-duration: calc(
+    var(--opening-duration) * 0.25 / var(--blink-e2-speed)
+  );
+  --blink-e3-duration: calc(
+    var(--opening-duration) * 0.39 / var(--blink-e3-speed)
+  );
+  --blink-delay-e1: var(--blink-hold-duration);
+  --blink-delay-e2: calc(var(--blink-hold-duration) + var(--blink-e1-duration));
+  --blink-delay-e3: calc(
+    var(--blink-hold-duration) + var(--blink-e1-duration) +
+      var(--blink-e2-duration)
+  );
+  --blink-total-duration: calc(
+    var(--blink-hold-duration) + var(--blink-e1-duration) +
+      var(--blink-e2-duration) + var(--blink-e3-duration)
+  );
+
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  pointer-events: all;
+  animation: openingCompletion var(--blink-total-duration) linear;
+}
+
+.topLid,
+.bottomLid {
+  position: absolute;
+  left: -15%;
+  width: 130%;
+  height: calc(var(--blink-base-h) + var(--blink-extra));
+  background: #000000;
+  /* マスク: 黒=表示、透明=くり抜き */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  animation-timing-function: ease-in-out, ease-in-out, ease-in-out, ease-in-out;
+  animation-fill-mode: forwards, forwards, forwards, forwards;
+}
+
+/* 四角形から、横長楕円を長径で半分にした半楕円をくり抜く */
+.topLid {
+  /* くり抜き位置は下辺のまま、外側（上）へ伸ばす */
+  top: calc(-1 * var(--blink-extra));
+  -webkit-mask-image: radial-gradient(
+    ellipse var(--blink-a) var(--blink-b-size) at 50% 100%,
+    transparent 0%,
+    transparent 99.5%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse var(--blink-a) var(--blink-b-size) at 50% 100%,
+    transparent 0%,
+    transparent 99.5%,
+    #000 100%
+  );
+  animation-name: blinkHoldTop, blinkE1Top, blinkE2Top, blinkE3Top;
+  animation-duration: var(--blink-hold-duration), var(--blink-e1-duration),
+    var(--blink-e2-duration), var(--blink-e3-duration);
+  animation-delay: 0s, var(--blink-delay-e1), var(--blink-delay-e2),
+    var(--blink-delay-e3);
+}
+
+.bottomLid {
+  /* くり抜き位置は上辺のまま、外側（下）へ伸ばす */
+  bottom: calc(-1 * var(--blink-extra));
+  -webkit-mask-image: radial-gradient(
+    ellipse var(--blink-a) var(--blink-b-size) at 50% 0%,
+    transparent 0%,
+    transparent 99.5%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse var(--blink-a) var(--blink-b-size) at 50% 0%,
+    transparent 0%,
+    transparent 99.5%,
+    #000 100%
+  );
+  animation-name: blinkHoldBottom, blinkE1Bottom, blinkE2Bottom, blinkE3Bottom;
+  animation-duration: var(--blink-hold-duration), var(--blink-e1-duration),
+    var(--blink-e2-duration), var(--blink-e3-duration);
+  animation-delay: 0s, var(--blink-delay-e1), var(--blink-delay-e2),
+    var(--blink-delay-e3);
+}
+
+@keyframes openingCompletion {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.999;
+  }
+}
+
+@keyframes blinkHoldTop {
+  from,
+  to {
+    transform: translateY(var(--blink-move-c));
+  }
+}
+
+@keyframes blinkHoldBottom {
+  from,
+  to {
+    transform: translateY(calc(var(--blink-move-c) * -1));
+  }
+}
+
+/* 細い瞬き（開 15 : 閉 8） */
+@keyframes blinkE1Top {
+  0% {
+    transform: translateY(var(--blink-move-c));
+  }
+
+  65.2174% {
+    transform: translateY(calc(var(--blink-move-c) - var(--blink-move-e1)));
+  }
+
+  100% {
+    transform: translateY(var(--blink-move-c));
+  }
+}
+
+@keyframes blinkE1Bottom {
+  0% {
+    transform: translateY(calc(var(--blink-move-c) * -1));
+  }
+
+  65.2174% {
+    transform: translateY(calc(var(--blink-move-c) * -1 + var(--blink-move-e1)));
+  }
+
+  100% {
+    transform: translateY(calc(var(--blink-move-c) * -1));
+  }
+}
+
+/* 半分瞬き（開 18 : 閉 7） */
+@keyframes blinkE2Top {
+  0% {
+    transform: translateY(var(--blink-move-c));
+  }
+
+  72% {
+    transform: translateY(calc(var(--blink-move-c) - var(--blink-move-e2)));
+  }
+
+  100% {
+    transform: translateY(var(--blink-move-c));
+  }
+}
+
+@keyframes blinkE2Bottom {
+  0% {
+    transform: translateY(calc(var(--blink-move-c) * -1));
+  }
+
+  72% {
+    transform: translateY(calc(var(--blink-move-c) * -1 + var(--blink-move-e2)));
+  }
+
+  100% {
+    transform: translateY(calc(var(--blink-move-c) * -1));
+  }
+}
+
+/* 全開 */
+@keyframes blinkE3Top {
+  from {
+    transform: translateY(var(--blink-move-c));
+  }
+
+  to {
+    transform: translateY(calc(var(--blink-move-c) - var(--blink-move-e3)));
+  }
+}
+
+@keyframes blinkE3Bottom {
+  from {
+    transform: translateY(calc(var(--blink-move-c) * -1));
+  }
+
+  to {
+    transform: translateY(calc(var(--blink-move-c) * -1 + var(--blink-move-e3)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    background: #000000;
+    animation: reducedOpening var(--opening-duration) ease-out forwards;
+  }
+
+  .topLid,
+  .bottomLid {
+    display: none;
+  }
+}
+
+@keyframes reducedOpening {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { DialogueBox } from "./DialogueBox";
 import { Notebook } from "./Notebook";
+import { OpeningBlink } from "./OpeningBlink";
 import { ResultScreen } from "./ResultScreen";
 import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
@@ -24,6 +25,11 @@ const EXAMPLES_PER_PAGE = GAME_CONFIG.examplesPerNotebookPage;
 
 type FeedbackOutcome = "nextRound" | "retry" | "clear" | "gameOver";
 
+function getPrefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function canUseNotebook(phase: GamePhase) {
   return (
     phase === "introDialogue" ||
@@ -37,7 +43,9 @@ export function GameScreen() {
   const [dialogueLines, setDialogueLines] =
     useState<DialogueLine[]>(INTRO_DIALOGUES);
   const [dialogueIndex, setDialogueIndex] = useState(0);
-  const [gamePhase, setGamePhase] = useState<GamePhase>("introDialogue");
+  const [gamePhase, setGamePhase] = useState<GamePhase>("opening");
+  const [openingKey, setOpeningKey] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<
@@ -116,6 +124,24 @@ export function GameScreen() {
     setTimeLeft(GAME_CONFIG.timeLimitSeconds);
     setIsTimedOut(false);
     setGamePhase("exampleDialogue");
+  }
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function syncReducedMotion() {
+      setReducedMotion(mediaQuery.matches);
+    }
+
+    syncReducedMotion();
+    mediaQuery.addEventListener("change", syncReducedMotion);
+    return () => mediaQuery.removeEventListener("change", syncReducedMotion);
+  }, []);
+
+  function handleOpeningComplete() {
+    setDialogueLines(INTRO_DIALOGUES);
+    setDialogueIndex(0);
+    setGamePhase("introDialogue");
   }
 
   useEffect(() => {
@@ -225,6 +251,7 @@ export function GameScreen() {
 
   function handleNextDialogue() {
     if (
+      gamePhase === "opening" ||
       gamePhase === "result" ||
       gamePhase === "answering" ||
       gamePhase === "answerFeedback"
@@ -324,7 +351,8 @@ export function GameScreen() {
   }
 
   function resetGame() {
-    setGamePhase("introDialogue");
+    setOpeningKey((key) => key + 1);
+    setGamePhase("opening");
     setDialogueLines(INTRO_DIALOGUES);
     setDialogueIndex(0);
     setCurrentQuestion(null);
@@ -344,9 +372,12 @@ export function GameScreen() {
     setIsTimedOut(false);
     setStartedAt(Date.now());
     setEndedAt(null);
+    setReducedMotion(getPrefersReducedMotion());
   }
 
   function handleMainClick() {
+    if (gamePhase === "opening") return;
+
     if (gamePhase === "result") {
       resetGame();
       return;
@@ -356,13 +387,15 @@ export function GameScreen() {
   }
 
   const instruction =
-    gamePhase === "answerFeedback"
-      ? "判定結果を表示中"
-      : gamePhase === "answering"
-        ? "暗号単語を選び、日本語を割り当ててください / Spaceで手帳"
-        : gamePhase === "introDialogue"
-          ? "左クリックで進む"
-          : "左クリックで進む / Spaceで手帳を開く";
+    gamePhase === "opening"
+      ? ""
+      : gamePhase === "answerFeedback"
+        ? "判定結果を表示中"
+        : gamePhase === "answering"
+          ? "暗号単語を選び、日本語を割り当ててください / Spaceで手帳"
+          : gamePhase === "introDialogue"
+            ? "左クリックで進む"
+            : "左クリックで進む / Spaceで手帳を開く";
 
   const showTimer =
     gamePhase === "question" ||
@@ -375,7 +408,13 @@ export function GameScreen() {
 
   return (
     <main className={styles.screen} onClick={handleMainClick}>
-      {gamePhase !== "result" ? (
+      {gamePhase === "opening" ? (
+        <OpeningBlink
+          key={openingKey}
+          reducedMotion={reducedMotion}
+          onComplete={handleOpeningComplete}
+        />
+      ) : gamePhase !== "result" ? (
         <>
           <div className={styles.status}>
             正解 {correctCount} / 失敗 {mistakeCount} / 間違い可能{" "}
