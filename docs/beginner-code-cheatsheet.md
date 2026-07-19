@@ -701,6 +701,8 @@ playSound("/assets/sounds/dialogue-next.mp3");
 
 会話送りやボタンクリック後に鳴るか確認する。
 
+このゲームでは音のキーとパスを`src/lib/sound.ts`へ集約する。誤答音は`handleSubmitAnswer()`で判定が誤答になった直後に`playSound("wrongAnswer")`を1回だけ呼び、表示コンポーネントや再描画される`useEffect`からは鳴らさない。
+
 ## 30. `public`フォルダの画像と音声
 
 ### 置き場所

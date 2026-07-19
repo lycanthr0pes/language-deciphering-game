@@ -10,7 +10,7 @@
 
 テスト版で使用する効果音、再生タイミング、重複再生防止、`basePath`対応を定義する。
 
-今回追加する音声ファイルは`end.mp3`と`close-note.mp3`の2つとし、既存の会話、発話、書き留め、銃、発砲の音は維持する。
+会話、発話、書き留め、手帳、判定、銃、発砲、終了タイトルで使用する音を一元管理する。誤答音のコードは実装済みだが、`wrong-answer.mp3`の素材配置は未完了とする。
 
 ## 2. 音声一覧
 
@@ -23,6 +23,8 @@
 | `gunShot` | `gun-shot.mp3` | 発砲した時 |
 | `end` | `end.mp3` | `GAME CLEAR`／`GAME OVER`の表示を開始した時 |
 | `closeNote` | `close-note.mp3` | Spaceで開いている手帳を閉じた時 |
+| `openNote` | `open-note.mp3` | Spaceで手帳を開いた時、A/Dでページが実際に移動した時 |
+| `wrongAnswer` | `wrong-answer.mp3` | `解答する`で問題全体を判定し、誤答だった時 |
 
 ## 3. 終了タイトル音
 
@@ -68,7 +70,22 @@ function toggleNotebook() {
 
 `Notebook`は閉じるcallbackを受け取らない。Space入力を管理する`GameScreen`だけが`closeNotebook()`を呼ぶ。
 
-## 5. 実装インターフェース
+## 5. 誤答音
+
+- `wrong-answer.mp3`は、`judgeAnswer()`が誤答を返した直後に1回だけ再生する。
+- 継続可能な1回目の誤答、2回目の誤答、時間切れ後の誤答をすべて対象とする。
+- 正解、未回答送信、暗号単語や日本語候補の選択、同じ誤答の送信が無効な状態では再生しない。
+- 判定結果を描画する子コンポーネントや`answerFeedback`の`useEffect`から再生しない。
+
+```ts
+const judgement = judgeAnswer(currentQuestion, selectedAnswers);
+
+if (!judgement.isCorrect) {
+  playSound("wrongAnswer");
+}
+```
+
+## 6. 実装インターフェース
 
 ```ts
 export type SoundKey =
@@ -78,7 +95,9 @@ export type SoundKey =
   | "drawGun"
   | "gunShot"
   | "end"
-  | "closeNote";
+  | "closeNote"
+  | "openNote"
+  | "wrongAnswer";
 
 const SOUND_FILES: Record<SoundKey, string> = {
   dialogueNext: "/assets/sounds/dialogue-next.mp3",
@@ -88,15 +107,20 @@ const SOUND_FILES: Record<SoundKey, string> = {
   gunShot: "/assets/sounds/gun-shot.mp3",
   end: "/assets/sounds/end.mp3",
   closeNote: "/assets/sounds/close-note.mp3",
+  openNote: "/assets/sounds/open-note.mp3",
+  wrongAnswer: "/assets/sounds/wrong-answer.mp3",
 };
 
 const SOUND_VOLUMES: Partial<Record<SoundKey, number>> = {
   end: 0.8,
   closeNote: 0.7,
+  openNote: 0.7,
 };
 ```
 
-## 6. basePath対応
+`wrongAnswer`は既定音量0.8を使う。音量を変更する場合は`SOUND_VOLUMES`へ追加する。
+
+## 7. basePath対応
 
 授業サーバでは`basePath`が付くため、`SOUND_FILES`の値を直接`Audio`へ渡さない。
 
@@ -119,15 +143,16 @@ export function playSound(key: SoundKey) {
 
 画像も同じ`assetPath()`を使い、素材URLの組み立てを重複させない。
 
-## 7. 多重再生防止
+## 8. 多重再生防止
 
 - 音は状態遷移を開始する関数またはユーザー操作handlerから再生する。
 - render中に再生しない。
 - 再描画される子コンポーネントから進行音を再生しない。
 - `animationend`とフォールバックtimeoutが競合する場合は完了ガードを共有し、終了タイトル音を再度鳴らさない。
 - Spaceのkeydown repeat中に手帳を開閉し続けないよう、必要に応じて`event.repeat`を無視する。
+- 誤答音は`handleSubmitAnswer()`の誤答分岐からだけ呼び、1回の送信で複数回鳴らさない。
 
-## 8. 素材
+## 9. 素材
 
 ```text
 public/assets/sounds/
@@ -138,12 +163,18 @@ public/assets/sounds/
   gun-shot.mp3
   end.mp3
   close-note.mp3
+  open-note.mp3
+  wrong-answer.mp3
 ```
 
-## 9. 完了条件
+`wrong-answer.mp3`は未配置。追加するまではコードから再生を試みても音は鳴らないため、素材追加後にHTTP 200と実音を確認する。
+
+## 10. 完了条件
 
 - 両終了タイトルで`end.mp3`が1回だけ鳴る。
 - Spaceで手帳を閉じた時だけ`close-note.mp3`が1回鳴る。
+- Spaceで手帳を開いた時と、A/Dでページが移動した時だけ`open-note.mp3`が1回鳴る。
+- 各誤答送信で`wrong-answer.mp3`が1回だけ鳴り、正解時には鳴らない。
 - 手帳内に閉じるボタンがなく、`Notebook`に閉じるcallbackがない。
 - ローカルと`basePath`付き授業サーバで全音声がHTTP 200になる。
 - 再描画、連続入力、フォールバック処理で多重再生しない。

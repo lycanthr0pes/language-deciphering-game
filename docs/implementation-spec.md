@@ -526,7 +526,9 @@ export type SoundKey =
   | "drawGun"
   | "gunShot"
   | "end"
-  | "closeNote";
+  | "closeNote"
+  | "openNote"
+  | "wrongAnswer";
 
 export function assetPath(path: string) {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -536,6 +538,10 @@ export function assetPath(path: string) {
 ```
 
 `SOUND_PATHS`は`/assets/...`を直接`Audio`へ渡さず、`assetPath()`で解決する。`play()`の失敗はcatchし、ゲーム進行を止めない。再描画する`useEffect`ではなく、状態遷移を開始するイベントから各音を1回だけ再生する。
+
+- `openNote`はSpaceで手帳を開いた時と、A/Dでページ番号が変わった時だけ鳴らす。
+- `wrongAnswer`は`handleSubmitAnswer()`で`judgement.isCorrect === false`が確定した直後に鳴らし、継続可能／終了条件のどちらの誤答でも1送信につき1回とする。
+- `wrong-answer.mp3`は`public/assets/sounds`へ配置する。未配置中は実音確認未完了として扱う。
 
 ## 21. リザルト
 

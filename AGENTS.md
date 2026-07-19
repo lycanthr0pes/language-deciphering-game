@@ -49,7 +49,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 問題提示時に手帳の`NEW`通知を表示し、最初に手帳を開いた時点で既読にする。通知は上下4px、1往復1800msで動かし、`prefers-reduced-motion`では静止させる。
 - 暗号は`Noto Sans Mende Kikakui`の実Unicode文字で表示する。カテゴリ6文字と候補2文字の`U+1E800`〜`U+1E807`を使い、単語順は左から右、単語内部は右から左にする。仮英字とPrivate Use Areaはプレイヤー画面へ出さない。フォント読込に失敗した場合は別表記へフォールバックせず、解答進行を停止してエラーを表示する。
 - 開始時はCSSによるまばたき演出を行う。クリア／失敗の発砲演出後は`GAME CLEAR`／`GAME OVER`を表示してからリザルトへ進む。
-- 終了タイトル開始時は`end.mp3`、Spaceで手帳を閉じた時だけ`close-note.mp3`を各1回再生する。画像と音声のURLは`basePath`対応の共通関数で組み立てる。
+- 終了タイトル開始時は`end.mp3`、Spaceで手帳を閉じた時は`close-note.mp3`、手帳を開いた時とページが移動した時は`open-note.mp3`、誤答確定時は`wrong-answer.mp3`を各1回再生する。誤答音は継続可能／終了条件の両方で鳴らし、正解時や判定表示の再描画では鳴らさない。画像と音声のURLは`basePath`対応の共通関数で組み立てる。
 - `endedAt`はLv8の最終正解または終了条件となる誤答を判定した送信処理内で1回だけ保存し、1400msの判定表示、発砲、終了タイトルの時間を結果へ含めない。
 - リザルトには経過時間、正解回数、失敗回数を表示し、左クリックで全ゲームstateを初期化してリトライする。
 

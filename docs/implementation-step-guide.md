@@ -321,14 +321,16 @@ public/
 
 - `assetPath()`で`NEXT_PUBLIC_BASE_PATH`を付ける。
 - 画像と音のパス生成を共通化する。
-- `SoundKey`へ`end`と`closeNote`を含める。
+- `SoundKey`へ`end`、`closeNote`、`openNote`、`wrongAnswer`を含める。
 - `play()`失敗をcatchし、進行を止めない。
 - 状態遷移を開始するhandlerから音を1回だけ鳴らす。
+- `wrongAnswer`は`handleSubmitAnswer()`の誤答分岐からだけ鳴らす。
 
 ### 完成条件
 
 - ローカルと授業サーバで全素材が取得できる。
 - renderや子コンポーネント再描画で音が増えない。
+- 1回目、2回目、時間切れ後の各誤答で誤答音が1回だけ鳴り、正解時には鳴らない。
 
 ## 19. 統合順
 
@@ -358,7 +360,7 @@ npm run dev
 - Space、A/D、標準Tab、背景クリック抑止を確認した。
 - NEW、判定表示、選択保持、同一解答再送信禁止を確認した。
 - Mende文字、RTL、フォントエラー、`basePath`を確認した。
-- 両終了タイトル、`end`、`closeNote`、リザルト、リトライを確認した。
+- 両終了タイトル、`end`、`closeNote`、`openNote`、`wrongAnswer`、リザルト、リトライを確認した。
 - 通常とモーション低減の両方を確認した。
 - listener、timeout、音声の多重登録がない。
 

@@ -190,7 +190,10 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[judgeAnswer] --> A2{終了条件が確定したか}
+    A[judgeAnswer] --> A1{誤答か}
+    A1 -->|はい| A4[wrongAnswerを1回再生]
+    A1 -->|いいえ| A2{終了条件が確定したか}
+    A4 --> A2
     A2 -->|はい| A3[endedAtへ送信時刻を1回だけ保存]
     A2 -->|いいえ| B[AnswerJudgementを保存]
     A3 --> B
@@ -206,6 +209,7 @@ flowchart TD
 ```
 
 正答は緑と`正答`ラベル、誤答は赤と`誤答`ラベルで表示する。
+誤答音は継続可否に関係なく送信handlerで1回だけ鳴らし、判定表示の再描画では鳴らさない。
 
 ## 12. 誤答と時間切れ
 

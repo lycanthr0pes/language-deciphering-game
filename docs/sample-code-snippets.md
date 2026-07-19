@@ -202,7 +202,9 @@ export type SoundKey =
   | "drawGun"
   | "gunShot"
   | "end"
-  | "closeNote";
+  | "closeNote"
+  | "openNote"
+  | "wrongAnswer";
 
 const SOUND_FILES: Record<SoundKey, string> = {
   dialogueNext: "/assets/sounds/dialogue-next.mp3",
@@ -212,11 +214,13 @@ const SOUND_FILES: Record<SoundKey, string> = {
   gunShot: "/assets/sounds/gun-shot.mp3",
   end: "/assets/sounds/end.mp3",
   closeNote: "/assets/sounds/close-note.mp3",
+  openNote: "/assets/sounds/open-note.mp3",
+  wrongAnswer: "/assets/sounds/wrong-answer.mp3",
 };
 
 export function playSound(key: SoundKey) {
   const audio = new Audio(assetPath(SOUND_FILES[key]));
-  audio.volume = key === "closeNote" ? 0.7 : 0.8;
+  audio.volume = key === "closeNote" || key === "openNote" ? 0.7 : 0.8;
   void audio.play().catch(() => {});
 }
 ```
@@ -248,6 +252,19 @@ export function judgeAnswer(
     tokenResults,
   };
 }
+```
+
+送信handlerでは判定結果を保存する前に誤答音を1回だけ鳴らす。
+
+```ts
+const judgement = judgeAnswer(currentQuestion, selectedAnswers);
+
+if (!judgement.isCorrect) {
+  playSound("wrongAnswer");
+}
+
+setAnswerJudgement(judgement);
+setGamePhase("answerFeedback");
 ```
 
 ## 8. 解答変更時の判定解除
