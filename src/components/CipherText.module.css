@@ -1,0 +1,16 @@
+.cipherSentence {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.55em;
+  direction: ltr;
+  align-items: baseline;
+}
+
+.cipherWord {
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-family: var(--font-mende-cipher), sans-serif;
+  color: #ff5555;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
