@@ -5,7 +5,8 @@ import { ChoiceList } from "./ChoiceList";
 import { CutsceneScreen } from "./CutsceneScreen";
 import { DialogueBox } from "./DialogueBox";
 import { EndTitleScreen } from "./EndTitleScreen";
-import { Notebook } from "./Notebook";import { OpeningBlink } from "./OpeningBlink";
+import { Notebook } from "./Notebook";
+import { OpeningBlink } from "./OpeningBlink";
 import { ResultScreen } from "./ResultScreen";
 import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
@@ -18,7 +19,9 @@ import type {
   GamePhase,
   Question,
   ResultStatus,
-} from "@/lib/gameTypes";import { judgeAnswer } from "@/lib/judgeAnswer";
+} from "@/lib/gameTypes";
+import { judgeAnswer } from "@/lib/judgeAnswer";
+import { loadMendeCipherFont } from "@/lib/loadCipherFont";
 import { playSound } from "@/lib/sound";
 import styles from "./GameScreen.module.css";
 
@@ -72,6 +75,9 @@ export function GameScreen() {
   const [endedAt, setEndedAt] = useState<number | null>(null);
   const [cutsceneStep, setCutsceneStep] = useState(0);
   const [resultStatus, setResultStatus] = useState<ResultStatus | null>(null);
+  const [fontStatus, setFontStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
   const pageCount = Math.max(
@@ -138,6 +144,26 @@ export function GameScreen() {
     syncReducedMotion();
     mediaQuery.addEventListener("change", syncReducedMotion);
     return () => mediaQuery.removeEventListener("change", syncReducedMotion);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadMendeCipherFont()
+      .then((loaded) => {
+        if (!cancelled) {
+          setFontStatus(loaded ? "ready" : "error");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFontStatus("error");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function handleOpeningComplete() {
@@ -457,6 +483,24 @@ export function GameScreen() {
   const showChoiceList =
     (gamePhase === "answering" || gamePhase === "answerFeedback") &&
     Boolean(currentQuestion);
+
+  if (fontStatus === "error") {
+    return (
+      <main className={styles.screen}>
+        <p className={styles.fontMessage} role="alert">
+          暗号フォントを読み込めません。再読み込みしてください。
+        </p>
+      </main>
+    );
+  }
+
+  if (fontStatus !== "ready") {
+    return (
+      <main className={styles.screen}>
+        <p className={styles.fontMessage}>読み込み中...</p>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.screen} onClick={handleMainClick}>

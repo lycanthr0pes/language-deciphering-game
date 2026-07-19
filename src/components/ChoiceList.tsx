@@ -1,9 +1,10 @@
+import { CipherText } from "./CipherText";
 import type { AnswerJudgement } from "@/lib/gameTypes";
 import styles from "./ChoiceList.module.css";
 
 type QuestionToken = {
   id: string;
-  cipher: string;
+  glyphText: string;
 };
 
 type ChoiceListProps = {
@@ -40,7 +41,7 @@ export function ChoiceList({
       ) : null}
 
       <div className={styles.tokens}>
-        {tokens.map((token) => {
+        {tokens.map((token, index) => {
           const isActive = activeTokenId === token.id;
           const answer = selectedAnswers[token.id];
           const result = judgement?.tokenResults[token.id];
@@ -59,7 +60,9 @@ export function ChoiceList({
               disabled={disabled}
               onClick={() => onSelectToken(token.id)}
             >
-              <span className={styles.cipher}>{token.cipher}</span>
+              <CipherText ariaLabel={`暗号単語${index + 1}`}>
+                {token.glyphText}
+              </CipherText>
               <span className={answerClass}>{answer ?? "未選択"}</span>
               {result ? (
                 <span className={styles.resultLabel}>

@@ -1,3 +1,4 @@
+import { getGlyphTextForWord } from "@/data/cipherGlyphs";
 import {
   getExampleTemplatesForLevel,
 } from "@/data/exampleTemplates";
@@ -78,9 +79,11 @@ function getCategoryChoices(category: InternalCategory): string[] {
 
 function makeToken(id: string, cipher: string): CipherToken {
   const word = findWord(cipher);
+  const poolCiphers = WORD_POOLS[word.category].map((entry) => entry.cipher);
   return {
     id,
     cipher: word.cipher,
+    glyphText: getGlyphTextForWord(word.category, word.cipher, poolCiphers),
     category: word.category,
     correctJa: word.ja,
   };
@@ -93,7 +96,7 @@ function buildExampleRecord(id: string, ciphers: string[]): ExampleRecord {
 
   return {
     id,
-    cipherText: ciphers.join(" "),
+    cipherText: tokens.map((token) => token.glyphText).join(" "),
     translation: tokens.map((token) => token.correctJa).join(" "),
     tokens,
   };
@@ -127,7 +130,7 @@ function buildQuestion(level: number, ciphers: string[]): Question {
 
   return {
     id: `question-${level}-${Date.now()}`,
-    cipherText: ciphers.join(" "),
+    cipherText: tokens.map((token) => token.glyphText).join(" "),
     tokens,
     correctAnswers,
     choiceCandidatesByTokenId,

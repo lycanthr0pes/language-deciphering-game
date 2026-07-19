@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react";
+import { CipherText } from "./CipherText";
+import cipherStyles from "./CipherText.module.css";
 import type { ExampleRecord } from "@/lib/gameTypes";
 import styles from "./Notebook.module.css";
 
@@ -56,7 +58,20 @@ export function Notebook({
         {visibleExamples.length > 0 ? (
           visibleExamples.map((example) => (
             <article key={example.id} className={styles.exampleItem}>
-              <p className={styles.cipher}>男「{example.cipherText}」</p>
+              <p className={styles.cipher}>
+                男「
+                <span className={cipherStyles.cipherSentence} dir="ltr">
+                  {example.tokens.map((token, index) => (
+                    <CipherText
+                      key={token.id}
+                      ariaLabel={`暗号単語${index + 1}`}
+                    >
+                      {token.glyphText}
+                    </CipherText>
+                  ))}
+                </span>
+                」
+              </p>
               <p className={styles.translation}>男「{example.translation}」</p>
             </article>
           ))

@@ -16,7 +16,10 @@ export type InternalCategory =
 
 export type CipherToken = {
   id: string;
+  /** 内部ID用の仮ラテン暗号（プール照合・判定にはこちらを使う） */
   cipher: string;
+  /** 画面表示用の Mende Kikakui 2文字 */
+  glyphText: string;
   category: InternalCategory;
   correctJa: string;
 };
