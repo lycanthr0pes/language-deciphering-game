@@ -161,6 +161,10 @@ npm run dev
 関連ドキュメント:
 
 - `project-flow.md`
+- `game-rule.md`
+- `mende-kikakui-font-guide.md`
+- `sound-change-spec.md`
+- `test-version-change-spec.md`
 - `github-policy.md`
 - `task-sheet-template.md`
 - `ui-spec.md`

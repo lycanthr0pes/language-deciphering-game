@@ -20,15 +20,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
 依頼者またはPM（`@ly`）の最新の明示指示を最優先とする。そのうえで、内容ごとに次を正とする。
 
 1. `docs/game-rule.md`: ゲームルール、語彙、レベル、判定、誤答、手帳、時間切れ
-2. `docs/ui-spec.md`: 画面構成、色、操作案内、素材、演出、見た目
-3. `docs/implementation-spec.md`: 完成形の構成、型、state、props、処理責務
-4. `docs/project-flow.md`: ゲーム状態と画面遷移の全体像
-5. `docs/implementation-step-guide.md`: 実装順、統合手順、確認項目
-6. `docs/github-policy.md`: ブランチ、commit、Pull Requestの運用
+2. `docs/mende-kikakui-font-guide.md`: 暗号文字、Unicode対応、文字方向、フォント読込
+3. `docs/sound-change-spec.md`: 終了タイトル音、手帳を閉じる音、音声再生条件
+4. `docs/test-version-change-spec.md`: NEW、判定表示、開始演出、終了タイトルなどテスト版の確定変更
+5. `docs/ui-spec.md`: 画面構成、色、操作案内、素材、演出、見た目
+6. `docs/implementation-spec.md`: 完成形の構成、型、state、props、処理責務
+7. `docs/project-flow.md`: ゲーム状態と画面遷移の全体像
+8. `docs/implementation-step-guide.md`: 実装順、統合手順、確認項目
+9. `docs/github-policy.md`: ブランチ、commit、Pull Requestの運用
 
 `docs/sample-code-snippets.md` と `docs/beginner-code-cheatsheet.md` は理解・実装の補助資料であり、完成仕様そのものではない。サンプルをそのまま採用せず、現行コードと上記の仕様に合わせる。`docs/task-sheet-template.md` は進捗管理用であり、プロダクト仕様の根拠にはしない。
 
-ドキュメント間に矛盾がある場合は、上記の優先順位と「確定／未確定」の記載を確認する。それでも解消しない場合は、影響範囲と選択肢を示してPMに確認する。
+ドキュメント間に矛盾がある場合、暗号フォントは`mende-kikakui-font-guide.md`、音は`sound-change-spec.md`、C01〜C07の変更は`test-version-change-spec.md`を正とする。それ以外は上記の優先順位と「確定／未確定」の記載を確認し、解消しない場合は影響範囲と選択肢を示してPMに確認する。
 
 ## プロダクトの確定仕様
 
@@ -39,19 +42,23 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - プレイヤー向けUIには、内部の品詞名・カテゴリ名を表示しない。
 - 問題中の暗号単語を選ぶと、その単語の内部カテゴリに属する日本語候補だけを表示する。
 - 単語選択時には判定しない。全暗号単語への割り当て後に `解答する` を押した時だけ、問題全体をまとめて判定する。未回答があればボタンは無効。
+- 判定時は`正答 n / N`と単語別の正答／誤答を1400ms表示する。表示中はタイマーと解答操作を止める。継続可能な誤答では選択を保持し、内容を変更するまで同じ解答を再送信できない。
 - 各問題の `mistakesRemaining` は1から始まる。1回目の誤答で0になり、0の状態でさらに誤答するとゲームオーバー。次の問題では1に戻す。
 - 時間切れだけでゲームオーバーにしない。時間切れ後の次の誤答でゲームオーバーにする。正解して次の問題へ進むと時間を初期化する。
-- 手帳は `Space` で開閉、開いている間は `Tab` で例文メモ／推測メモを切り替え、`A` / `D` でページ移動する。各メモを開いた直後は最新ページを表示する。
-- 例文メモと推測メモはレベルをまたいで保持し、正解後もリセットしない。推測メモは問題画面の解答stateと分離する。
+- 手帳は暗号例文と日本語訳の履歴だけを表示する。`Space`で開閉し、`A` / `D`でページ移動する。開いた直後は最新ページを表示し、1ページに例文を2件載せる。閉じるボタンとゲーム内の`Tab`操作は設けない。
+- 問題提示時に手帳の`NEW`通知を表示し、最初に手帳を開いた時点で既読にする。通知は上下4px、1往復1800msで動かし、`prefers-reduced-motion`では静止させる。
+- 暗号は`Noto Sans Mende Kikakui`の実Unicode文字で表示する。カテゴリ6文字と候補2文字の`U+1E800`〜`U+1E807`を使い、単語順は左から右、単語内部は右から左にする。仮英字とPrivate Use Areaはプレイヤー画面へ出さない。フォント読込に失敗した場合は別表記へフォールバックせず、解答進行を停止してエラーを表示する。
+- 開始時はCSSによるまばたき演出を行う。クリア／失敗の発砲演出後は`GAME CLEAR`／`GAME OVER`を表示してからリザルトへ進む。
+- 終了タイトル開始時は`end.mp3`、Spaceで手帳を閉じた時だけ`close-note.mp3`を各1回再生する。画像と音声のURLは`basePath`対応の共通関数で組み立てる。
+- `endedAt`はLv8の最終正解または終了条件となる誤答を判定した送信処理内で1回だけ保存し、1400msの判定表示、発砲、終了タイトルの時間を結果へ含めない。
 - リザルトには経過時間、正解回数、失敗回数を表示し、左クリックで全ゲームstateを初期化してリトライする。
 
 日本語語彙、Lv別構成、例文数、具体的な遷移は `docs/game-rule.md` を参照し、同じデータを複数箇所へ重複定義しない。
 
-## 未決定・仮仕様
+## 未決定・調整可能な仕様
 
-- `raka`、`rami` などの暗号文字列は実装確認用の仮例。特殊フォントか存在しない英単語風かは未決定。
 - 1問90秒、残り15秒で警告は初期案。数値は `src/lib/gameConfig.ts` に集約し、PMが変更できるようにする。
-- 照明、仮面、素材、具体的な効果音、クリア／失敗演出の最終表現はPM決定事項。
+- 照明、仮面、背景・人物素材の最終表現はPM決定事項。
 - 未決定の素材がなくても、仮背景・仮テキスト・無音でゲーム進行が成立する実装を維持する。
 
 ## 実装構成と責務
@@ -59,10 +66,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - TypeScriptとCSS Modulesを基本とする。全体に必要なリセット等を除き、グローバルCSSへコンポーネント固有スタイルを増やさない。
 - `src/app/page.tsx` は `GameScreen` を表示する薄いエントリーポイントにする。
 - ゲーム進行に関わるstateと遷移は原則 `GameScreen` に集約する。子コンポーネントはpropsを描画し、操作をcallbackで親へ通知する。
-- `DialogueBox` は会話表示、`ChoiceList` は解答UI、`Notebook` は手帳表示、`TimerDisplay` は表示、`CutsceneScreen` は演出表示、`ResultScreen` は結果表示を担当する。
+- `DialogueBox`は会話表示、`ChoiceList`は解答UI、`Notebook`は例文履歴、`CipherText`は暗号文字、`TimerDisplay`は時間表示、`OpeningBlink`は開始演出、`CutsceneScreen`は発砲演出、`EndTitleScreen`は終了タイトル、`ResultScreen`は結果表示を担当する。
 - 子コンポーネントで、親と同じ意味のstate、正誤判定、タイマー進行、フェーズ遷移、ゲーム初期化を重複して持たない。
 - 共有型は `src/lib/gameTypes.ts`、調整値は `src/lib/gameConfig.ts`、純粋な正誤判定は `src/lib/judgeAnswer.ts` に置く。
-- 画像・音声・フォントは `public/assets/images`、`public/assets/sounds`、`public/assets/fonts` を使う。
+- 画像・音声は`public/assets/images`、`public/assets/sounds`を使う。Mendeフォントは`src/assets/fonts`、ライセンスは`public/licenses`へ置き、`next/font/local`で読み込む。
 - `useState`、`useEffect`、ブラウザイベント、`onClick` を使うコンポーネントには、必要な境界にだけ `"use client";` を付ける。
 
 ## React・入力処理の注意
@@ -71,7 +78,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - render中にランダム生成やstate更新をしない。問題データは問題開始時に一度生成してstateへ保存する。
 - state更新直後に古いstateを参照する処理を避け、必要なら更新前の値から次の値を計算する。
 - キーボードlistener、タイマー、演出用timeoutは `useEffect` のcleanupで解除する。
-- `Space` と `Tab` はブラウザ既定動作を抑止する。キー入力は入力欄など編集可能要素への干渉にも注意する。
+- `Space`はブラウザ既定動作を抑止する。`Tab`はゲーム操作に使わず、ブラウザ標準のフォーカス移動を妨げない。キー入力は入力欄など編集可能要素への干渉にも注意する。
 - 選択肢、手帳、解答ボタンなどの操作で、背景の会話送りが同時発火しないよう `stopPropagation()` とフェーズ条件を適切に使う。
 - 会話中、解答中、手帳表示中、演出中、リザルト中のどの入力が有効かを明示し、無関係なフェーズで処理しない。
 - 判定ロジックは副作用のない関数として保ち、UIコンポーネント内へ埋め込まない。
@@ -82,7 +89,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 暗い、不気味、閉鎖的な雰囲気を優先する。黒、こげ茶、暗い灰色、低彩度を中心にする。
 - 中央奥に仮面の男、手前に机と手帳、下部に会話ボックス、右上に残り時間を置く。
 - 操作案内は会話や手帳の本文領域の外へ、小さめの灰色で表示する。
-- UIを変更する際は、マウスだけでなく `Space`、`Tab`、`A` / `D` の動作、無効状態、文字の可読性も確認する。
+- UIを変更する際は、マウス、`Space`、`A` / `D`、標準の`Tab`フォーカス、無効状態、Mende文字の可読性も確認する。
 
 ## 検証
 
@@ -98,11 +105,12 @@ UIやゲーム進行を変えた場合は `npm run dev` で実画面も確認す
 手動確認の要点:
 
 - 左クリックで会話が正しいフェーズだけ進む。
-- `Space`、手帳中の `Tab`、`A` / `D` が動き、ブラウザ既定動作や背景クリックを誘発しない。
+- `Space`と手帳中の`A` / `D`が動き、`Tab`の標準フォーカス移動、ブラウザ既定動作、背景クリックへ不要な干渉をしない。
 - 暗号単語と日本語候補を選択でき、全回答後のみ送信でき、送信時だけ判定される。
+- 判定中は操作とタイマーが止まり、継続可能な誤答では選択が保持される。
 - 1回目の誤答、2回目の誤答、時間切れ後の誤答が仕様どおり分岐する。
-- Lv1からLv8、クリア／失敗演出、リザルト、リトライを通してstateが正しく初期化・保持される。
-- プレイヤー画面に内部品詞・カテゴリ名が露出しない。
+- Lv1からLv8、開始演出、クリア／失敗演出、終了タイトル、リザルト、リトライを通してstateが正しく初期化・保持される。
+- プレイヤー画面に内部品詞・カテゴリ名、仮英字、PUA文字が露出しない。
 
 実行できなかった確認や既知の未確認事項は、完了報告に明記する。
 
