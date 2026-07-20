@@ -34,7 +34,10 @@ export function EndTitleScreen({
   }, []);
 
   useEffect(() => {
-    const fallbackId = window.setTimeout(completeOnce, duration + 250);
+    const fallbackId = window.setTimeout(
+      completeOnce,
+      duration + GAME_CONFIG.animationFallbackBufferMs,
+    );
     return () => window.clearTimeout(fallbackId);
   }, [completeOnce, duration]);
 

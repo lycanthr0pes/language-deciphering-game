@@ -23,14 +23,17 @@ function CipherDialogueText({ text }: { text: string }) {
 }
 
 export function DialogueBox({ line, instruction }: DialogueBoxProps) {
+  const content =
+    line.type === "cipher" ? (
+      <CipherDialogueText text={line.text} />
+    ) : (
+      line.text
+    );
+
   return (
     <div className={styles.box}>
       <p className={`${styles.text} ${styles[line.type]}`}>
-        {line.type === "cipher" ? (
-          <CipherDialogueText text={line.text} />
-        ) : (
-          line.text
-        )}
+        {line.speaker === "man" ? <>男「{content}」</> : content}
       </p>
       <p className={styles.instruction}>{instruction}</p>
     </div>

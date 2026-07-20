@@ -4,5 +4,6 @@ export const mendeCipherFont = localFont({
   src: "../assets/fonts/NotoSansMendeKikakui-Regular.woff2",
   display: "block",
   preload: true,
+  adjustFontFallback: false,
   variable: "--font-mende-cipher",
 });

@@ -172,9 +172,9 @@ useEffect(() => {
 
 | キー | 処理 |
 | --- | --- |
-| `Space` | 手帳を開閉する |
-| `A` | 手帳表示中に前ページへ移動する |
-| `D` | 手帳表示中に次ページへ移動する |
+| `Space` | `answering`中だけ手帳を開閉する |
+| `A` | 手帳表示中に前の見開きへ移動する |
+| `D` | 手帳表示中に次の見開きへ移動する |
 
 `Tab`はゲーム操作に使わず、ブラウザ標準のフォーカス移動に使う。
 
@@ -183,6 +183,8 @@ useEffect(() => {
 ```tsx
 useEffect(() => {
   function handleKeyDown(event: KeyboardEvent) {
+    if (gamePhase !== "answering") return;
+
     if (event.code === "Space") {
       event.preventDefault();
       toggleNotebook();
@@ -201,7 +203,7 @@ useEffect(() => {
 
   window.addEventListener("keydown", handleKeyDown);
   return () => window.removeEventListener("keydown", handleKeyDown);
-}, [isNotebookOpen]);
+}, [gamePhase, isNotebookOpen]);
 ```
 
 ### `event.preventDefault()`
@@ -263,7 +265,6 @@ useEffect(() => {
 <DialogueBox
   line={currentDialogueLine}
   instruction="左クリックで進む"
-  onNext={handleNextDialogue}
 />
 ```
 
@@ -271,20 +272,21 @@ useEffect(() => {
 
 ```tsx
 type DialogueBoxProps = {
-  line: DialogueLine | null;
+  line: DialogueLine;
   instruction: string;
-  onNext: () => void;
 };
 
-export function DialogueBox({ line, instruction, onNext }: DialogueBoxProps) {
+export function DialogueBox({ line, instruction }: DialogueBoxProps) {
   return (
-    <div onClick={onNext}>
-      <p>{line?.text}</p>
+    <div>
+      <p>{line.text}</p>
       <p>{instruction}</p>
     </div>
   );
 }
 ```
+
+会話送りは親の`GameScreen`が背景クリックを受けて行い、`DialogueBox`は表示だけを担当する。
 
 ## 11. callback props
 
@@ -300,6 +302,7 @@ export function DialogueBox({ line, instruction, onNext }: DialogueBoxProps) {
   choices={getActiveAnswerChoices()}
   selectedAnswers={selectedAnswers}
   activeTokenId={activeAnswerTokenId}
+  instruction="暗号単語を選び、その下の解答枠へ日本語を割り当てる"
   canSubmit={canSubmitAnswer()}
   onSelectToken={handleSelectAnswerToken}
   onSelectWord={handleSelectAnswerWord}
@@ -322,13 +325,17 @@ export function DialogueBox({ line, instruction, onNext }: DialogueBoxProps) {
 ### 例
 
 ```tsx
-{gamePhase === "answering" && currentQuestion ? (
+{(gamePhase === "answering" || gamePhase === "answerFeedback") &&
+currentQuestion ? (
   <ChoiceList
     tokens={currentQuestion.tokens}
     choices={getActiveAnswerChoices()}
     selectedAnswers={selectedAnswers}
     activeTokenId={activeAnswerTokenId}
+    instruction={instruction}
     canSubmit={canSubmitAnswer()}
+    disabled={gamePhase === "answerFeedback"}
+    judgement={answerJudgement}
     onSelectToken={handleSelectAnswerToken}
     onSelectWord={handleSelectAnswerWord}
     onSubmit={handleSubmitAnswer}
@@ -339,9 +346,11 @@ export function DialogueBox({ line, instruction, onNext }: DialogueBoxProps) {
 意味:
 
 ```text
-gamePhaseがansweringで、currentQuestionがあるならChoiceListを表示する。
+gamePhaseがansweringまたはanswerFeedbackで、currentQuestionがあるならChoiceListを表示する。
 そうでなければ何も表示しない。
 ```
+
+この`ChoiceList`は問題文、暗号単語、その直下の解答枠、候補、判定、操作案内を1つのダイアログとして表示する。同じ条件で`TimerDisplay`も表示し、`question`では従来の`DialogueBox`だけを表示する。
 
 ## 13. `map`
 
@@ -635,15 +644,15 @@ const isActive = activeTokenId === token.id;
 
 ```tsx
 useEffect(() => {
-  if (gamePhase !== "answering") return;
-
-  if (timeLeft <= 0) {
-    setIsTimedOut(true);
-    return;
-  }
+  if (gamePhase !== "answering" || timeLeft <= 0) return;
 
   const timerId = window.setTimeout(() => {
-    setTimeLeft((prev) => Math.max(prev - 1, 0));
+    const nextTimeLeft = Math.max(timeLeft - 1, 0);
+    setTimeLeft(nextTimeLeft);
+
+    if (nextTimeLeft === 0) {
+      startTerminalCutscene("gameOver", Date.now());
+    }
   }, 1000);
 
   return () => window.clearTimeout(timerId);
@@ -657,6 +666,8 @@ useEffect(() => {
 | `setTimeout` | 1秒後に処理する |
 | `clearTimeout` | 不要になったタイマーを止める |
 | `Math.max(prev - 1, 0)` | 0より小さくしない |
+
+手帳の開閉状態を条件や依存値に入れないため、手帳を開いている間も時間が進み、開閉で1秒の途中経過もリセットされない。
 
 ## 28. 時間表示
 
@@ -674,25 +685,51 @@ export function formatTime(seconds: number) {
 ### 使い方
 
 ```tsx
-<p>残り時間 {formatTime(timeLeft)}</p>
+const showAnswerDialog =
+  (gamePhase === "answering" || gamePhase === "answerFeedback") &&
+  currentQuestion !== null;
+
+{showAnswerDialog ? (
+  <TimerDisplay
+    timeLeft={timeLeft}
+    warningTime={GAME_CONFIG.warningTimeSeconds}
+    mistakesRemaining={mistakesRemaining}
+  />
+) : null}
 ```
+
+問題単独提示中は時間と間違い可能回数を表示しない。判定中は`TimerDisplay`を残すが、タイマー更新処理は`answering`だけで動かす。
 
 ## 29. 効果音
 
 ### 例
 
 ```ts
-export function playSound(path: string) {
-  const audio = new Audio(path);
-  audio.volume = 0.8;
-  void audio.play();
+export function preloadSounds() {
+  (Object.keys(SOUND_PATHS) as SoundKey[]).forEach((key) => {
+    getAudioPool(key).forEach(({ audio }) => audio.load());
+  });
+}
+
+export function playSound(key: SoundKey) {
+  const pool = getAudioPool(key);
+  const entry =
+    pool.find(({ audio, isPlaying }) => !isPlaying || audio.ended) ??
+    pool.reduce((oldest, candidate) =>
+      candidate.startedAt < oldest.startedAt ? candidate : oldest,
+    );
+  entry.isPlaying = true;
+  entry.audio.currentTime = 0;
+  void entry.audio.play().catch(() => {
+    entry.isPlaying = false;
+  });
 }
 ```
 
 ### 使い方
 
 ```ts
-playSound("/assets/sounds/dialogue-next.mp3");
+playSound("dialogueNext");
 ```
 
 ### 注意
@@ -701,7 +738,7 @@ playSound("/assets/sounds/dialogue-next.mp3");
 
 会話送りやボタンクリック後に鳴るか確認する。
 
-このゲームでは音のキーとパスを`src/lib/sound.ts`へ集約する。誤答音は`handleSubmitAnswer()`で判定が誤答になった直後に`playSound("wrongAnswer")`を1回だけ呼び、表示コンポーネントや再描画される`useEffect`からは鳴らさない。
+このゲームでは音のキーとパスを`src/lib/sound.ts`へ集約し、起動時に各音を3要素ずつ先読みする。誤答音は`handleSubmitAnswer()`で判定が誤答になった直後に`playSound("wrongAnswer")`を1回だけ呼び、時間切れ、表示コンポーネント、再描画される`useEffect`からは鳴らさない。
 
 ## 30. `public`フォルダの画像と音声
 
@@ -737,12 +774,15 @@ public/assets/sounds/dialogue-next.mp3
 - ゲーム進行のstateは基本的に`GameScreen`に置く。
 - 子コンポーネントは表示とクリック通知を担当する。
 - `ChoiceList`は正誤判定しない。
+- `DialogueBox`は通常会話・例文・問題単独提示を担当し、`ChoiceList`は問題と解答UIを1つのダイアログへまとめる。
 - 正誤判定は`解答する`ボタンを押した時だけ行う。
 - UI上では品詞ラベルを表示しない。
-- 手帳は例文履歴専用とし、開閉とページstateは`GameScreen`に置く。
+- 手帳には提示例文と正答した問題・解答を同じ形式で記録する。提示例文は`question`から`answering`へ入る時、正答履歴は正答確定時に無通知で追加する。1見開きは左3件、右3件の順で埋め、開閉と見開きstateは`GameScreen`に置く。
 - 判定時は正答数とトークン別結果を返し、継続可能な誤答では選択を残す。
 - 暗号はMende Kikakuiの実Unicode文字で表示し、字形では判定しない。
-- 時間切れだけではゲームオーバーにしない。
+- タイマーが0になった瞬間に、失敗回数を増やさずゲームオーバー演出へ進む。
+- 手帳を開いている間もタイマーを進める。
+- 残り時間と間違い可能回数は解答中と判定中だけ表示し、判定中は値を保ったままカウントを止める。
 - 間違い可能回数が0の状態でさらに間違えたらゲームオーバーにする。
 - ランダム生成はReactの`return`内で行わない。
 - 画像や音声が未完成でも、仮表示で動く状態を先に作る。

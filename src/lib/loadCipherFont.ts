@@ -1,4 +1,3 @@
-import { mendeCipherFont } from "@/app/fonts";
 import { REQUIRED_MENDE_GLYPHS } from "@/data/cipherGlyphs";
 
 export async function loadMendeCipherFont() {
@@ -7,11 +6,15 @@ export async function loadMendeCipherFont() {
   }
 
   await document.fonts.ready;
+  const fontFamily = getComputedStyle(document.documentElement)
+    .getPropertyValue("--font-mende-cipher")
+    .trim();
+  if (!fontFamily) return false;
 
   const loaded = await document.fonts.load(
-    `16px ${mendeCipherFont.style.fontFamily}`,
+    `16px ${fontFamily}`,
     REQUIRED_MENDE_GLYPHS,
   );
 
-  return loaded.length > 0;
+  return loaded.some((fontFace) => fontFace.status === "loaded");
 }

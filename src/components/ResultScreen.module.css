@@ -1,35 +1,42 @@
 .result {
-  width: min(900px, 90vw);
-  padding: 32px 24px;
-  text-align: center;
-  color: #ffffff;
-  background: rgba(0, 0, 0, 0.78);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 15;
+  width: min(76%, 760px);
+  box-sizing: border-box;
+  padding: clamp(18px, 2.2vw, 38px);
+  transform: translate(-50%, -50%);
   border: 1px solid #777777;
+  background: rgba(0, 0, 0, 0.84);
+  color: #ffffff;
+  text-align: center;
 }
 
 .result h1 {
-  margin-bottom: 24px;
-  font-size: 36px;
+  margin: 0 0 clamp(12px, 1.25vw, 24px);
+  font-size: clamp(24px, 2.5vw, 44px);
   letter-spacing: 0.08em;
 }
 
 .result p {
-  margin-bottom: 12px;
-  font-size: 20px;
-  line-height: 1.6;
+  margin: 0 0 clamp(5px, 0.55vw, 11px);
+  font-size: clamp(13px, 1.15vw, 20px);
+  line-height: 1.5;
 }
 
 .result button {
-  margin-top: 16px;
-  padding: 10px 24px;
-  color: #dceeff;
-  background: #111111;
+  margin-top: clamp(8px, 0.85vw, 16px);
+  padding: clamp(6px, 0.55vw, 10px) clamp(14px, 1.3vw, 24px);
   border: 1px solid #66aaff;
+  background: #111111;
+  color: #dceeff;
+  font-size: clamp(12px, 0.9vw, 16px);
   cursor: pointer;
 }
 
 .instruction {
-  margin-top: 24px;
-  font-size: 14px;
+  margin-top: clamp(10px, 1.25vw, 24px) !important;
   color: #bbbbbb;
+  font-size: clamp(10px, 0.78vw, 14px) !important;
 }

@@ -1,12 +1,9 @@
-import type { InternalCategory } from "@/lib/gameTypes";
-
-export type CandidateIndex = 1 | 2;
-export type CipherId = `${InternalCategory}-${CandidateIndex}`;
-
-export type CipherGlyphEntry = {
-  cipherId: CipherId;
-  glyphText: string;
-};
+import type {
+  CandidateIndex,
+  CipherGlyphEntry,
+  CipherId,
+  InternalCategory,
+} from "@/lib/gameTypes";
 
 const CATEGORY_CODE_POINTS: Record<InternalCategory, number> = {
   color: 0x1e865,
@@ -78,15 +75,4 @@ export const REQUIRED_MENDE_GLYPHS =
 
 export function getCipherGlyph(cipherId: CipherId) {
   return CIPHER_GLYPHS[cipherId];
-}
-
-export function getGlyphTextForWord(
-  category: InternalCategory,
-  latinCipher: string,
-  poolCiphers: readonly string[],
-): string {
-  const index = poolCiphers.indexOf(latinCipher);
-  const candidateIndex: CandidateIndex = index === 1 ? 2 : 1;
-  const cipherId: CipherId = `${category}-${candidateIndex}`;
-  return CIPHER_GLYPHS[cipherId].glyphText;
 }

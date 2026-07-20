@@ -9,8 +9,7 @@
 .cipherWord {
   direction: rtl;
   unicode-bidi: isolate;
-  font-family: var(--font-mende-cipher), sans-serif;
+  font-family: var(--font-mende-cipher);
   color: #ff5555;
   letter-spacing: 0.08em;
-  user-select: none;
 }

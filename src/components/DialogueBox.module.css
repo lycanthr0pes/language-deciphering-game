@@ -1,21 +1,33 @@
 .box {
-  width: min(900px, 90vw);
-  min-height: 160px;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.78);
-  border: 1px solid #777777;
+  position: absolute;
+  right: 5%;
+  bottom: 3%;
+  left: 5%;
+  z-index: 7;
+  min-height: 20%;
+  box-sizing: border-box;
+  padding: clamp(10px, 1.25vw, 24px);
+  border: 1px solid rgba(151, 143, 126, 0.68);
+  background: rgba(3, 3, 3, 0.86);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.52);
   color: #ffffff;
 }
 
 .text {
-  font-size: 24px;
-  line-height: 1.8;
+  margin: 0;
+  font-size: clamp(15px, 1.5vw, 26px);
+  line-height: 1.65;
 }
 
 .instruction {
-  margin-top: 24px;
-  font-size: 14px;
-  color: #bbbbbb;
+  position: absolute;
+  right: clamp(10px, 1.25vw, 24px);
+  bottom: clamp(7px, 0.7vw, 14px);
+  left: clamp(10px, 1.25vw, 24px);
+  margin: 0;
+  color: #aaa69d;
+  font-size: clamp(10px, 0.78vw, 14px);
+  text-align: right;
 }
 
 .normal {

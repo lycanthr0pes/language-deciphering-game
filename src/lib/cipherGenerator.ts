@@ -1,9 +1,8 @@
-import { getGlyphTextForWord } from "@/data/cipherGlyphs";
-import {
-  getExampleTemplatesForLevel,
-} from "@/data/exampleTemplates";
+import { getCipherGlyph } from "@/data/cipherGlyphs";
+import { getLevelDefinition } from "@/data/exampleTemplates";
 import { WORD_POOLS } from "@/data/wordPools";
 import type {
+  CipherId,
   CipherToken,
   DialogueLine,
   ExampleRecord,
@@ -19,142 +18,106 @@ export type GeneratedRound = {
 
 type WordEntry = {
   category: InternalCategory;
+  cipherId: CipherId;
   ja: string;
-  cipher: string;
 };
 
-type QuestionSlot = InternalCategory | "anyNoun";
-
-const LEVEL_QUESTION_SLOTS: Record<number, QuestionSlot[]> = {
-  1: ["color", "humanNoun"],
-  2: ["color", "anyNoun"],
-  3: ["quality", "anyNoun"],
-  4: ["quantity", "anyNoun"],
-  5: ["anyNoun", "verb"],
-  6: ["color", "quality", "anyNoun"],
-  7: ["quantity", "anyNoun", "verb"],
-  8: ["quantity", "color", "quality", "anyNoun", "verb"],
-};
-
-function pickRandom<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-function resolveCategory(slot: QuestionSlot): InternalCategory {
-  if (slot !== "anyNoun") {
-    return slot;
-  }
-
-  return pickRandom(["humanNoun", "animalNoun"] as const);
-}
-
-function pickRandomWord(category: InternalCategory): WordEntry {
-  const entries = WORD_POOLS[category] as readonly { ja: string; cipher: string }[];
-  const entry = pickRandom(entries);
-  return {
-    category,
-    ja: entry.ja,
-    cipher: entry.cipher,
-  };
-}
-
-function findWord(cipher: string): WordEntry {
+function findWord(cipherId: CipherId): WordEntry {
   for (const [category, entries] of Object.entries(WORD_POOLS)) {
-    const entry = entries.find((word) => word.cipher === cipher);
+    const entry = entries.find((word) => word.cipherId === cipherId);
     if (entry) {
       return {
         category: category as InternalCategory,
+        cipherId: entry.cipherId,
         ja: entry.ja,
-        cipher: entry.cipher,
       };
     }
   }
 
-  throw new Error(`Unknown cipher word: ${cipher}`);
+  throw new Error(`Unknown cipher id: ${cipherId}`);
 }
 
 function getCategoryChoices(category: InternalCategory): string[] {
   return WORD_POOLS[category].map((entry) => entry.ja);
 }
 
-function makeToken(id: string, cipher: string): CipherToken {
-  const word = findWord(cipher);
-  const poolCiphers = WORD_POOLS[word.category].map((entry) => entry.cipher);
+function makeToken(id: string, cipherId: CipherId): CipherToken {
+  const word = findWord(cipherId);
   return {
     id,
-    cipher: word.cipher,
-    glyphText: getGlyphTextForWord(word.category, word.cipher, poolCiphers),
+    cipherId,
+    glyphText: getCipherGlyph(cipherId).glyphText,
     category: word.category,
     correctJa: word.ja,
   };
 }
 
-function buildExampleRecord(id: string, ciphers: string[]): ExampleRecord {
-  const tokens = ciphers.map((cipher, index) =>
-    makeToken(`${id}-token-${index + 1}`, cipher),
+function buildExampleRecord(
+  id: string,
+  cipherIds: readonly CipherId[],
+): ExampleRecord {
+  const tokens = cipherIds.map((cipherId, index) =>
+    makeToken(`${id}-token-${index + 1}`, cipherId),
   );
 
   return {
     id,
-    cipherText: tokens.map((token) => token.glyphText).join(" "),
     translation: tokens.map((token) => token.correctJa).join(" "),
     tokens,
   };
+}
+
+function getGlyphSentence(tokens: CipherToken[]) {
+  return tokens.map((token) => token.glyphText).join(" ");
 }
 
 function buildDialogueLines(examples: ExampleRecord[]): DialogueLine[] {
   return examples.flatMap((example) => [
     {
       id: `${example.id}-cipher`,
-      text: example.cipherText,
+      text: getGlyphSentence(example.tokens),
       type: "cipher" as const,
+      speaker: "man" as const,
     },
     {
-      id: `${example.id}-ja`,
+      id: `${example.id}-translation`,
       text: example.translation,
       type: "translation" as const,
+      speaker: "man" as const,
     },
   ]);
 }
 
-function buildQuestion(level: number, ciphers: string[]): Question {
-  const tokens = ciphers.map((cipher, index) =>
-    makeToken(`token-${index + 1}`, cipher),
-  );
-  const correctAnswers = Object.fromEntries(
-    tokens.map((token) => [token.id, token.correctJa]),
-  );
-  const choiceCandidatesByTokenId = Object.fromEntries(
-    tokens.map((token) => [token.id, getCategoryChoices(token.category)]),
+function buildQuestion(level: number, cipherIds: readonly CipherId[]): Question {
+  const tokens = cipherIds.map((cipherId, index) =>
+    makeToken(`question-${level}-token-${index + 1}`, cipherId),
   );
 
   return {
-    id: `question-${level}-${Date.now()}`,
-    cipherText: tokens.map((token) => token.glyphText).join(" "),
+    id: `question-${level}`,
+    level,
     tokens,
-    correctAnswers,
-    choiceCandidatesByTokenId,
+    correctAnswers: Object.fromEntries(
+      tokens.map((token) => [token.id, token.correctJa]),
+    ),
+    choiceCandidatesByTokenId: Object.fromEntries(
+      tokens.map((token) => [
+        token.id,
+        getCategoryChoices(token.category),
+      ]),
+    ),
   };
 }
 
-function generateQuestionCiphers(level: number): string[] {
-  const slots = LEVEL_QUESTION_SLOTS[level] ?? LEVEL_QUESTION_SLOTS[1];
-
-  return slots.map((slot) => {
-    const category = resolveCategory(slot);
-    return pickRandomWord(category).cipher;
-  });
-}
-
 export function generateRound(level: number): GeneratedRound {
-  const exampleTemplates = getExampleTemplatesForLevel(level);
-  const examples = exampleTemplates.map((ciphers, index) =>
-    buildExampleRecord(`example-${level}-${index + 1}`, ciphers),
+  const definition = getLevelDefinition(level);
+  const examples = definition.examples.map((cipherIds, index) =>
+    buildExampleRecord(`example-${level}-${index + 1}`, cipherIds),
   );
 
   return {
     dialogueLines: buildDialogueLines(examples),
     examples,
-    question: buildQuestion(level, generateQuestionCiphers(level)),
+    question: buildQuestion(level, definition.question),
   };
 }

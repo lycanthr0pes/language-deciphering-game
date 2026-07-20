@@ -12,6 +12,7 @@ type ChoiceListProps = {
   choices: string[];
   selectedAnswers: Partial<Record<string, string>>;
   activeTokenId: string | null;
+  instruction: string;
   canSubmit: boolean;
   disabled: boolean;
   judgement: AnswerJudgement | null;
@@ -25,6 +26,7 @@ export function ChoiceList({
   choices,
   selectedAnswers,
   activeTokenId,
+  instruction,
   canSubmit,
   disabled,
   judgement,
@@ -33,45 +35,65 @@ export function ChoiceList({
   onSubmit,
 }: ChoiceListProps) {
   return (
-    <div className={styles.list} onClick={(event) => event.stopPropagation()}>
+    <section
+      className={styles.list}
+      aria-label="解答ダイアログ"
+      onClick={(event) => event.stopPropagation()}
+    >
       {judgement ? (
         <p className={styles.judgementCount} aria-live="polite">
           正答 {judgement.correctWordCount} / {judgement.totalWordCount}
         </p>
       ) : null}
 
-      <div className={styles.tokens}>
-        {tokens.map((token, index) => {
-          const isActive = activeTokenId === token.id;
-          const answer = selectedAnswers[token.id];
-          const result = judgement?.tokenResults[token.id];
-          const answerClass =
-            result === "correct"
-              ? styles.correctAnswer
-              : result === "incorrect"
-                ? styles.incorrectAnswer
-                : styles.answer;
+      <div className={styles.questionLine}>
+        <span className={styles.speaker}>男「</span>
+        <div className={styles.tokens}>
+          {tokens.map((token, index) => {
+            const isActive = activeTokenId === token.id;
+            const answer = selectedAnswers[token.id];
+            const result = judgement?.tokenResults[token.id];
+            const answerStateClass =
+              result === "correct"
+                ? styles.correctAnswer
+                : result === "incorrect"
+                  ? styles.incorrectAnswer
+                  : answer
+                    ? styles.selectedAnswer
+                    : styles.unselectedAnswer;
 
-          return (
-            <button
-              key={token.id}
-              className={isActive ? styles.activeToken : styles.token}
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelectToken(token.id)}
-            >
-              <CipherText ariaLabel={`暗号単語${index + 1}`}>
-                {token.glyphText}
-              </CipherText>
-              <span className={answerClass}>{answer ?? "未選択"}</span>
-              {result ? (
-                <span className={styles.resultLabel}>
-                  {result === "correct" ? "正答" : "誤答"}
+            return (
+              <button
+                key={token.id}
+                className={`${styles.token} ${isActive ? styles.activeToken : ""}`}
+                type="button"
+                disabled={disabled}
+                onClick={() => onSelectToken(token.id)}
+              >
+                <span className={styles.cipherToken}>
+                  <CipherText ariaLabel={`暗号単語${index + 1}`}>
+                    {token.glyphText}
+                  </CipherText>
                 </span>
-              ) : null}
-            </button>
-          );
-        })}
+                <span className={`${styles.answerFrame} ${answerStateClass}`}>
+                  {answer ?? "未選択"}
+                </span>
+                {result ? (
+                  <span
+                    className={`${styles.resultLabel} ${
+                      result === "correct"
+                        ? styles.correctLabel
+                        : styles.incorrectLabel
+                    }`}
+                  >
+                    {result === "correct" ? "正答" : "誤答"}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+        <span className={styles.closingQuote}>」</span>
       </div>
 
       <div className={styles.words}>
@@ -99,6 +121,7 @@ export function ChoiceList({
       >
         解答する
       </button>
-    </div>
+      <p className={styles.instruction}>{instruction}</p>
+    </section>
   );
 }
