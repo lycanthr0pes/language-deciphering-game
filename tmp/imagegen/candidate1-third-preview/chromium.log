@@ -1,0 +1,2 @@
+[486891:486891:0721/050512.892752:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+772617 bytes written to file /home/products/Git_Products/language-deciphering-game/tmp/imagegen/candidate1-third-preview/candidate1-aim-self-preview.png

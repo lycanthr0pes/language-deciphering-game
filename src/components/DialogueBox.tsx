@@ -6,6 +6,7 @@ import styles from "./DialogueBox.module.css";
 type DialogueBoxProps = {
   line: DialogueLine;
   instruction: string;
+  actionCue: "next→" | "answer→";
 };
 
 function CipherDialogueText({ text }: { text: string }) {
@@ -22,7 +23,11 @@ function CipherDialogueText({ text }: { text: string }) {
   );
 }
 
-export function DialogueBox({ line, instruction }: DialogueBoxProps) {
+export function DialogueBox({
+  line,
+  instruction,
+  actionCue,
+}: DialogueBoxProps) {
   const content =
     line.type === "cipher" ? (
       <CipherDialogueText text={line.text} />
@@ -31,11 +36,16 @@ export function DialogueBox({ line, instruction }: DialogueBoxProps) {
     );
 
   return (
-    <div className={styles.box}>
-      <p className={`${styles.text} ${styles[line.type]}`}>
-        {line.speaker === "man" ? <>男「{content}」</> : content}
-      </p>
+    <>
+      <div className={styles.box}>
+        <p className={`${styles.text} ${styles[line.type]}`}>
+          {content}
+        </p>
+        <p className={styles.actionCue} aria-hidden="true">
+          {actionCue}
+        </p>
+      </div>
       <p className={styles.instruction}>{instruction}</p>
-    </div>
+    </>
   );
 }

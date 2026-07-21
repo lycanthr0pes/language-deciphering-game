@@ -1,8 +1,8 @@
 # タスク管理用 Google スプレッドシート設計
 
-最終更新: 2026-07-20
+最終更新: 2026-07-21
 
-このファイルは現行仕様をもとにした進捗管理テンプレートであり、プロダクト仕様の根拠にはしない。仕様は`game-rule.md`、`mende-kikakui-font-guide.md`、`sound-change-spec.md`、`test-version-change-spec.md`、`implementation-spec.md`を参照する。
+このファイルは現行仕様をもとにした進捗管理テンプレートであり、プロダクト仕様の根拠にはしない。仕様は`game-rule.md`、`mende-kikakui-font-guide.md`、`ui-spec.md`、`implementation-spec.md`、`project-flow.md`を参照する。
 
 ## 1. 列
 
@@ -16,8 +16,6 @@
 ファイル	反映内容
 game-rule.md	語彙、Lv1〜8、例文数、判定、誤答、時間、手帳、終了条件
 mende-kikakui-font-guide.md	Mendeフォント、Unicode、文字方向、ライセンス
-sound-change-spec.md	終了タイトル音、手帳を閉じる音、basePath
-test-version-change-spec.md	NEW、手帳簡素化、判定表示、開始・終了演出
 ui-spec.md	画面、色、Figma、素材、モーション
 implementation-spec.md	型、state、props、コンポーネント、処理責務
 project-flow.md	ゲーム状態と画面遷移
@@ -31,22 +29,22 @@ github-policy.md	Git、commit、Pull Request
 タスクID	カテゴリ	タスク名	担当者	補助担当	優先度	ステータス	成果物	関連ファイル	依存タスク	PM確認	メモ	PR/URL
 T001	PM	C01〜C07を正式仕様化	@ly	全員	高	完了	承認済み仕様	本書以外の全仕様		承認	2026-07-20承認
 T002	PM	Mendeフォント仕様を確定	@ly	@ささかまぼこ。, @ほっそー	高	完了	Mendeフォント仕様	mende-kikakui-font-guide.md		承認	M01〜M08承認
-T003	PM	音仕様を確定	@ly	@ほっそー	中	完了	音仕様	sound-change-spec.md		承認	end、closeNote、openNote、wrongAnswerを承認。誤答音素材は未配置
+T003	PM	音仕様を確定	@ly	@ほっそー	中	完了	音仕様	game-rule.md, implementation-spec.md		承認	end、closeNote、openNote、wrongAnswerを承認。誤答音素材は未配置
 T004	UI/絵	通常ゲーム画面を作成	@ささかまぼこ。	@ly	高	未着手	Figmaフレーム	ui-spec.md	T001	未確認	16:9、男、机、会話、時間
 T005	UI/絵	Mende暗号表示を作成	@ささかまぼこ。	@ほっそー	高	未着手	2・3・5単語フレーム	mende-kikakui-font-guide.md	T002	未確認	Webと同じUnicode対応
-T006	UI/絵	提示例文・正答履歴用手帳とNEWを作成	@ささかまぼこ。	@ほっそー	高	未着手	手帳・NEWフレーム	ui-spec.md, test-version-change-spec.md	T004	未確認	別タブと閉じるボタンなし
-T007	UI/絵	判定状態を作成	@ささかまぼこ。	@かまぼこ(本物)	高	未着手	判定差分	ui-spec.md, test-version-change-spec.md	T004	未確認	正答数、緑、赤、ラベル
+T006	UI/絵	提示例文・正答履歴用手帳とNEWを作成	@ささかまぼこ。	@ほっそー	高	未着手	手帳・NEWフレーム	ui-spec.md	T004	未確認	別タブと閉じるボタンなし
+T007	UI/絵	判定状態を作成	@ささかまぼこ。	@かまぼこ(本物)	高	未着手	判定差分	ui-spec.md	T004	未確認	正答数、緑、赤、可視ラベルなし、誤答時揺れ
 T008	UI/絵	開始・終了タイトルを作成	@ささかまぼこ。	@ほっそー	中	未着手	演出確認フレーム	ui-spec.md	T004	未確認	まばたき画像とタイトル画像は不要
 T009	実装	共有型と設定値を整備	@ほっそー	@かまぼこ(本物)	高	未着手	gameTypes/gameConfig	implementation-spec.md	T001	未確認	GamePhase、AnswerJudgement、全時間
 T010	実装	Mendeフォントと暗号データを実装	@ほっそー	@ささかまぼこ。	高	未着手	fonts/CipherText/cipherGlyphs	mende-kikakui-font-guide.md	T002,T009	未確認	承認済み8文字、LTR/RTL
 T011	実装	Lv別例文・問題生成を実装	@ほっそー	@かまぼこ(本物)	高	未着手	wordPools/templates/generator	game-rule.md, implementation-spec.md	T009,T010	未確認	累計10例文、Lv1〜8
-T012	実装	会話と解答UIを接続	@かまぼこ(本物)	@ほっそー	高	未着手	DialogueBox/ChoiceList	implementation-spec.md	T011	未確認	カテゴリ名を表示しない
-T013	実装	正答数と単語別判定を実装	@かまぼこ(本物)	@ほっそー	高	未着手	judgeAnswer/判定UI	implementation-spec.md	T012	未確認	1400ms、選択保持、再送信禁止
+T012	実装	会話と解答UIを接続	@かまぼこ(本物)	@ほっそー	高	未着手	DialogueBox/ChoiceList	implementation-spec.md	T011	未確認	話者名・括弧・カテゴリ名なし、問題・解答欄だけ大枠内、候補は個別の暗色枠
+T013	実装	正答数と単語別判定を実装	@かまぼこ(本物)	@ほっそー	高	未着手	judgeAnswer/判定UI	implementation-spec.md	T012	未確認	正答1400ms、継続誤答即時再開、終了誤答は演出へ直行
 T014	実装	誤答・時間切れを実装	@かまぼこ(本物)	@ほっそー	高	未着手	誤答分岐/TimerDisplay	game-rule.md, implementation-spec.md	T013	未確認	1回猶予、時間切れ即終了
 T015	実装	提示例文・正答履歴用手帳とNEWを実装	@ほっそー	@かまぼこ(本物)	高	未着手	Notebook/未読state	implementation-spec.md	T006,T011	未確認	Space、A/D、見開き最大6件、1800ms
 T016	実装	CSSまばたきを実装	@ほっそー	@ささかまぼこ。	中	未着手	OpeningBlink	implementation-spec.md	T008,T009	未確認	2300ms、低減300ms、素材エラー
 T017	実装	発砲・終了タイトルを実装	@ほっそー	@ささかまぼこ。	中	未着手	Cutscene/EndTitle	implementation-spec.md	T008,T009	未確認	両終了分岐、完了ガード
-T018	実装	音とbasePathを実装	@ほっそー	@かまぼこ(本物)	中	作業中	sound/assetPath	sound-change-spec.md	T003,T015,T017	未確認	end、closeNote、openNote、wrongAnswer。誤答音素材は未配置
+T018	実装	音とbasePathを実装	@ほっそー	@かまぼこ(本物)	中	作業中	sound/assetPath	game-rule.md, implementation-spec.md	T003,T015,T017	未確認	end、closeNote、openNote、wrongAnswer。誤答音素材は未配置
 T019	実装	リザルトとリトライを実装	@かまぼこ(本物)	@ほっそー	高	未着手	ResultScreen/reset	implementation-spec.md	T014,T017	未確認	endedAtは判定確定時
 T020	全体	GameScreenへ統合	@かまぼこ(本物)	@ほっそー	高	未着手	統合PR	implementation-spec.md	T010,T011,T012,T013,T014,T015,T016,T017,T018,T019	未確認	同時編集を避ける
 T021	全体	PCブラウザ通し確認	@かまぼこ(本物), @ほっそー	@ly	高	未着手	確認記録	全仕様	T020	未確認	通常・低減・エラー・basePath
@@ -82,16 +80,19 @@ PM確認	承認	PMが承認した
 フォント	文はLTR、単語内部はRTLか	2・3・5単語問題
 手帳	左3件、右3件の固定順で最大18件をSpace・A/D操作できるか	手帳
 NEW	問題文のクリック後に出て最初の手帳表示で消えるか	NEW
-配置	解答・判定中に問題文と単語直下の解答枠が1つのダイアログへ統合されるか	解答UI
+配置	解答・判定中に問題文と単語直下の解答枠だけが大枠内、候補・送信・案内・判定数が大枠外に配置されるか	解答UI
+会話	本文が中央揃え、操作案内が枠外の中央下、会話送りにnext→、解答開始にanswer→が枠内右下へ出るか	DialogueBox
 表示	問題単独提示ではステータスがなく、解答・判定中だけ表示されるか	タイマー、解答UI
-判定	正答数、単語別結果、選択保持が正しいか	解答UI
-誤答	1回目、2回目、時間切れ即終了が正しく分岐するか	ゲーム進行
+判定	正答数、緑・赤だけの単語別結果、変更欄だけの色解除、選択保持が正しいか	解答UI
+誤答	1回目の即時再開・同一解答再送信・320ms揺れ、2回目、時間切れ即終了が正しく分岐するか	ゲーム進行
 時間	手帳表示中も進み、0秒で手帳を閉じて即終了するか	タイマー、手帳
-履歴	正答した問題と解答が無通知で1回だけ追加されるか	手帳
+履歴	正答履歴が1回だけ追加され、背景が内容高で下側に余白がなく、画像と重ならない拡大`a/b`と操作案内があるか	手帳
 演出	開始、両発砲、両終了タイトルが1回ずつ進むか	演出
+再読込	同一タブのブラウザ再読込では開始暗転を省き、ゲーム内リトライでは開始演出を再生するか	OpeningBlink
+照明	全場面でFigma node枠`612,-112.5,696,1020`と画像の左右7.4%・上1.78%・下25%インセットが維持されるか	全画面
 音	各音源が3要素先読みされ、end、closeNote、openNote、wrongAnswerが条件どおり鳴るか	音
 配信	フォント・画像・音がbasePathで取得できるか	Network
-リザルト	判定表示・終了演出を含めない経過時間と回数が出るか	RESULT
+リザルト	黒地とFigma照明だけの背景で、判定表示・終了演出を含めない経過時間と回数が出るか	RESULT
 ```
 
 ## 6. 運用

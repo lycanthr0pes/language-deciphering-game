@@ -1,17 +1,23 @@
 .timer {
-  position: absolute;
-  top: 3%;
-  right: 3%;
-  z-index: 8;
-  padding: clamp(6px, 0.6vw, 11px) clamp(8px, 0.8vw, 14px);
-  border: 1px solid rgba(112, 108, 98, 0.45);
-  background: rgba(0, 0, 0, 0.62);
-  font-size: clamp(11px, 0.85vw, 15px);
-  text-align: right;
+  width: 100%;
+  height: 10.3704cqh;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 1.6667cqh 1.1458cqw;
+  border: 2px solid rgba(112, 107, 97, 0.55);
+  background: rgba(0, 0, 0, 0.68);
+  text-align: left;
 }
 
 .timer p {
   margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.normal,
+.warning {
+  font-size: clamp(11px, 1.1458cqw, 22px);
 }
 
 .normal {
@@ -22,7 +28,24 @@
   color: #ff5555;
 }
 
+.subText,
+.timer p + p {
+  margin-top: 1.2963cqh;
+  font-size: clamp(10px, 0.9375cqw, 18px);
+}
+
 .subText {
-  margin-top: 4px !important;
-  color: #bbbbbb;
+  color: #bababa;
+}
+
+@container (max-width: 720px) or (max-height: 430px) {
+  .timer {
+    height: auto;
+    padding: 7px 9px;
+  }
+
+  .subText,
+  .timer p + p {
+    margin-top: 5px;
+  }
 }

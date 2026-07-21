@@ -163,15 +163,11 @@ npm run dev
 - `project-flow.md`
 - `game-rule.md`
 - `mende-kikakui-font-guide.md`
-- `sound-change-spec.md`
-- `test-version-change-spec.md`
 - `github-policy.md`
 - `task-sheet-template.md`
 - `ui-spec.md`
 - `implementation-spec.md`
-- `training-task.md`
 - `implementation-step-guide.md`
-- `AI-guide.md`
 
 ## 初心者向けの作業手順
 

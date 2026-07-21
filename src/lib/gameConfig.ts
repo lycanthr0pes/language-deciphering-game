@@ -1,3 +1,13 @@
+const SCENE_ASSETS = {
+  ceilingLight: "/assets/images/scene-ceiling-light.svg",
+  maskedManNormal: "/assets/images/masked-man-normal.png",
+  maskedManDraw: "/assets/images/masked-man-draw.png",
+  maskedManAimPlayer: "/assets/images/masked-man-aim-player.png",
+  maskedManAimSelf: "/assets/images/masked-man-aim-self.png",
+  deskNotebookPen: "/assets/images/desk-notebook-pen.png",
+  notebookOpenSpread: "/assets/images/notebook-open-spread.png",
+} as const;
+
 export const GAME_CONFIG = {
   finalLevel: 8,
   safeMistakeCount: 1,
@@ -5,6 +15,7 @@ export const GAME_CONFIG = {
   warningTimeSeconds: 15,
   examplesPerNotebookSpread: 6,
   answerFeedbackMs: 1400,
+  wrongAnswerShakeMs: 320,
   newAnimationHalfCycleMs: 900,
   openingBlinkMs: 2300,
   reducedMotionOpeningMs: 300,
@@ -15,6 +26,6 @@ export const GAME_CONFIG = {
   gameOverTitleMs: 2300,
   gameClearTitleMs: 2400,
   reducedMotionEndTitleMs: 1500,
-  // 背景・人物画像が確定したら assetPath() へ渡す公開パスを追加する。
-  openingAssetPaths: [] as readonly string[],
+  sceneAssets: SCENE_ASSETS,
+  openingAssetPaths: Object.values(SCENE_ASSETS) as readonly string[],
 } as const;

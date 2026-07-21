@@ -1,33 +1,53 @@
 .box {
   position: absolute;
   right: 5%;
-  bottom: 3%;
+  bottom: 10.3704%;
   left: 5%;
   z-index: 7;
-  min-height: 20%;
+  height: 13.3333%;
   box-sizing: border-box;
-  padding: clamp(10px, 1.25vw, 24px);
-  border: 1px solid rgba(151, 143, 126, 0.68);
-  background: rgba(3, 3, 3, 0.86);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.52);
+  overflow: hidden;
+  padding: 1.8519cqh 1.7708cqw;
+  border: 2px solid rgba(150, 143, 125, 0.68);
+  border-radius: 6px;
+  background: rgba(3, 3, 3, 0.88);
   color: #ffffff;
 }
 
 .text {
   margin: 0;
-  font-size: clamp(15px, 1.5vw, 26px);
-  line-height: 1.65;
+  font-size: clamp(15px, 1.6667cqw, 32px);
+  line-height: 1.5;
+  text-align: center;
 }
 
 .instruction {
   position: absolute;
-  right: clamp(10px, 1.25vw, 24px);
-  bottom: clamp(7px, 0.7vw, 14px);
-  left: clamp(10px, 1.25vw, 24px);
+  bottom: 6.4815%;
+  left: 50%;
+  z-index: 7;
   margin: 0;
-  color: #aaa69d;
-  font-size: clamp(10px, 0.78vw, 14px);
-  text-align: right;
+  color: #aba69c;
+  font-size: clamp(10px, 0.9375cqw, 18px);
+  line-height: 1.25;
+  text-align: center;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.actionCue {
+  position: absolute;
+  right: 1.7708cqw;
+  bottom: 1.2963cqh;
+  margin: 0;
+  color: #f2eee6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(16px, 1.5625cqw, 30px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
 }
 
 .normal {
@@ -41,4 +61,21 @@
 .translation,
 .answer {
   color: #66aaff;
+}
+
+@container (max-width: 720px) or (max-height: 430px) {
+  .box {
+    bottom: 10%;
+    height: 19%;
+    padding: 10px 12px;
+  }
+
+  .instruction {
+    bottom: 2%;
+  }
+
+  .actionCue {
+    right: 12px;
+    bottom: 8px;
+  }
 }

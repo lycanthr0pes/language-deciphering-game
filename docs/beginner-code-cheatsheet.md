@@ -2,7 +2,7 @@
 
 担当: @かまぼこ(本物), @ほっそー
 最終決定: @ly(らい) / PM
-最終更新: 2026-07-20
+最終更新: 2026-07-21
 
 ## 1. 目的
 
@@ -18,7 +18,7 @@
 | `implementation-step-guide.md` | 初心者向けの実装手順 |
 | `ui-spec.md` | 画面、UI、操作仕様 |
 | `mende-kikakui-font-guide.md` | 暗号フォント、Unicode、文字方向 |
-| `sound-change-spec.md` | 効果音と再生タイミング |
+| `game-rule.md` | ゲームルールと効果音の再生条件 |
 
 ## 2. このプロダクトでよく使う考え方
 
@@ -64,7 +64,7 @@ export function GameScreen() {
 | --- | --- |
 | `GameScreen.tsx` | state、クリック、キーボード入力を使うため |
 | `ChoiceList.tsx` | ボタンのクリックを扱うため |
-| `Notebook.tsx` | NEWのCSSアニメーションを描画する場合 |
+| `NotebookIndicator.tsx` | 解答中の手帳アイコンとNEWのCSSアニメーションを描画する場合 |
 | `ResultScreen.tsx` | リトライクリックを扱うため |
 
 ## 4. `useState`
@@ -183,14 +183,21 @@ useEffect(() => {
 ```tsx
 useEffect(() => {
   function handleKeyDown(event: KeyboardEvent) {
-    if (gamePhase !== "answering") return;
+    const target = event.target;
+    const isEditable =
+      target instanceof HTMLElement &&
+      target.matches("input, select, textarea, [contenteditable='true']");
+
+    if (isEditable) return;
 
     if (event.code === "Space") {
       event.preventDefault();
+      if (gamePhase !== "answering") return;
       toggleNotebook();
+      return;
     }
 
-    if (!isNotebookOpen) return;
+    if (gamePhase !== "answering" || !isNotebookOpen) return;
 
     if (event.code === "KeyA") {
       moveNotebookPage(-1);
@@ -210,7 +217,7 @@ useEffect(() => {
 
 ブラウザ標準の動きを止める。
 
-このゲームでは、`Space`による画面スクロールを止めるために使う。`Tab`では呼ばず、標準のフォーカス移動を維持する。
+このゲームでは、`Space`による画面スクロールとフォーカス中ボタンの押下を止めるために使う。実装では`keyup`側も同様に抑止する。`Tab`や`Enter`では呼ばず、標準のフォーカス移動とボタン操作を維持する。ゲームステージには`user-select: none`も設定し、左クリックやドラッグで文字を範囲選択させない。
 
 ## 8. `onClick`
 
@@ -265,6 +272,7 @@ useEffect(() => {
 <DialogueBox
   line={currentDialogueLine}
   instruction="左クリックで進む"
+  actionCue="next→"
 />
 ```
 
@@ -274,13 +282,15 @@ useEffect(() => {
 type DialogueBoxProps = {
   line: DialogueLine;
   instruction: string;
+  actionCue: "next→" | "answer→";
 };
 
-export function DialogueBox({ line, instruction }: DialogueBoxProps) {
+export function DialogueBox({ line, instruction, actionCue }: DialogueBoxProps) {
   return (
     <div>
       <p>{line.text}</p>
       <p>{instruction}</p>
+      <p>{actionCue}</p>
     </div>
   );
 }
@@ -302,7 +312,7 @@ export function DialogueBox({ line, instruction }: DialogueBoxProps) {
   choices={getActiveAnswerChoices()}
   selectedAnswers={selectedAnswers}
   activeTokenId={activeAnswerTokenId}
-  instruction="暗号単語を選び、その下の解答枠へ日本語を割り当てる"
+  instruction="Spaceで手帳を開く"
   canSubmit={canSubmitAnswer()}
   onSelectToken={handleSelectAnswerToken}
   onSelectWord={handleSelectAnswerWord}
@@ -350,7 +360,7 @@ gamePhaseがansweringまたはanswerFeedbackで、currentQuestionがあるなら
 そうでなければ何も表示しない。
 ```
 
-この`ChoiceList`は問題文、暗号単語、その直下の解答枠、候補、判定、操作案内を1つのダイアログとして表示する。同じ条件で`TimerDisplay`も表示し、`question`では従来の`DialogueBox`だけを表示する。
+この`ChoiceList`は、透明な解答UIコンテナの中で問題文、暗号単語、その直下の解答枠だけを大枠に入れ、候補、解答ボタン、判定数、操作案内を大枠の外へ表示する。同じ条件で`TimerDisplay`も表示し、`question`では従来の`DialogueBox`だけを表示する。
 
 ## 13. `map`
 
@@ -773,12 +783,15 @@ public/assets/sounds/dialogue-next.mp3
 
 - ゲーム進行のstateは基本的に`GameScreen`に置く。
 - 子コンポーネントは表示とクリック通知を担当する。
+- Figma node `13:66`の照明は`SceneCeilingLight`へまとめ、読込からリザルトまで同じ素材と配置を使う。各画面に照明用CSSを複製しない。
+- 開始まばたきは新規タブの初回とゲーム内リトライだけで再生し、同一タブのブラウザ再読込では`sessionStorage`とNavigation Timingを使って省略する。
 - `ChoiceList`は正誤判定しない。
-- `DialogueBox`は通常会話・例文・問題単独提示を担当し、`ChoiceList`は問題と解答UIを1つのダイアログへまとめる。
+- `DialogueBox`は通常会話・例文・問題単独提示を本文だけで描画し、右下に会話送りの`next→`または解答開始の`answer→`を表示する。`ChoiceList`は外側の透明な配置コンテナと、問題文・解答欄だけを収める内側パネルに分ける。候補、解答ボタン、案内、判定数は内側パネル外とし、候補は共通の大枠を持たない`#111`背景の独立ボタンにする。
 - 正誤判定は`解答する`ボタンを押した時だけ行う。
 - UI上では品詞ラベルを表示しない。
-- 手帳には提示例文と正答した問題・解答を同じ形式で記録する。提示例文は`question`から`answering`へ入る時、正答履歴は正答確定時に無通知で追加する。1見開きは左3件、右3件の順で埋め、開閉と見開きstateは`GameScreen`に置く。
-- 判定時は正答数とトークン別結果を返し、継続可能な誤答では選択を残す。
+- 手帳には見出し、発話者名、括弧を付けず、提示例文と正答した問題・解答を暗号文／日本語訳の同じ形式で記録する。履歴に内容高の半透明背景を付けて文字を大きくし、画像と重ならない拡大`a/b`は見開き画像の上側外、操作案内は下側外へ置く。提示例文は`question`から`answering`へ入る時、正答履歴は正答確定時に無通知で追加する。1見開きは左3件、右3件の順で埋め、開閉と見開きstateは`GameScreen`に置く。
+- 判定時は正答数とトークン別結果を返す。単語別結果は緑・赤だけで描画し、継続可能な誤答では選択と色分けを残して即時再開する。変更した解答欄だけ色を解除し、他欄の色と正答数を維持する。同じ解答も再送信できる。
+- 継続可能な1回目の誤答だけ連番を増やしてダイアログを320ms揺らす。終了条件となる2回目は連番を増やさずゲームオーバー演出へ直行し、モーション低減時は1回目も揺らさない。
 - 暗号はMende Kikakuiの実Unicode文字で表示し、字形では判定しない。
 - タイマーが0になった瞬間に、失敗回数を増やさずゲームオーバー演出へ進む。
 - 手帳を開いている間もタイマーを進める。

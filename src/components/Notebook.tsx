@@ -1,6 +1,8 @@
-import type { CSSProperties } from "react";
+import Image from "next/image";
 import { CipherText } from "./CipherText";
 import cipherStyles from "./CipherText.module.css";
+import { assetPath } from "@/lib/assetPath";
+import { GAME_CONFIG } from "@/lib/gameConfig";
 import type { ExampleRecord, NotebookSpread } from "@/lib/gameTypes";
 import styles from "./Notebook.module.css";
 
@@ -9,8 +11,6 @@ type NotebookProps = {
   spread: NotebookSpread;
   page: number;
   pageCount: number;
-  newAnimationHalfCycleMs: number;
-  showNew: boolean;
 };
 
 function NotebookPage({
@@ -28,7 +28,6 @@ function NotebookPage({
       {examples.map((example) => (
         <article key={example.id} className={styles.exampleItem}>
           <p className={styles.cipher}>
-            男「
             <span className={cipherStyles.cipherSentence} dir="ltr">
               {example.tokens.map((token, index) => (
                 <CipherText
@@ -39,9 +38,8 @@ function NotebookPage({
                 </CipherText>
               ))}
             </span>
-            」
           </p>
-          <p className={styles.translation}>男「{example.translation}」</p>
+          <p className={styles.translation}>{example.translation}</p>
         </article>
       ))}
     </section>
@@ -53,29 +51,8 @@ export function Notebook({
   spread,
   page,
   pageCount,
-  newAnimationHalfCycleMs,
-  showNew,
 }: NotebookProps) {
-  if (!isOpen) {
-    if (!showNew) {
-      return null;
-    }
-
-    const newBadgeStyle = {
-      "--new-animation-half-cycle": `${newAnimationHalfCycleMs}ms`,
-    } as CSSProperties;
-
-    return (
-      <div
-        className={styles.newBadge}
-        style={newBadgeStyle}
-        aria-label="手帳に新しい例文があります"
-      >
-        <span>NEW</span>
-        <span aria-hidden="true">↓</span>
-      </div>
-    );
-  }
+  if (!isOpen) return null;
 
   const visibleExamples = [...spread.left, ...spread.right];
   const isCompact =
@@ -90,7 +67,15 @@ export function Notebook({
       <div
         className={`${styles.notebook} ${isCompact ? styles.compact : ""}`}
       >
-        <h2 className={styles.title}>手帳</h2>
+        <Image
+          className={styles.notebookImage}
+          src={assetPath(GAME_CONFIG.sceneAssets.notebookOpenSpread)}
+          alt=""
+          width={1376}
+          height={768}
+          loading="eager"
+          draggable={false}
+        />
 
         {visibleExamples.length > 0 ? (
           <div className={styles.spread}>
@@ -100,15 +85,20 @@ export function Notebook({
         ) : (
           <p className={styles.empty}>まだ例文がありません</p>
         )}
-
-        <p className={styles.pageInfo}>
-          見開き {page + 1} / {pageCount}
-        </p>
-        <p className={styles.hint}>
-          Spaceで閉じる
-          {pageCount > 1 ? " / A・Dで見開き移動" : ""}
-        </p>
       </div>
+      <p className={styles.pageInfo}>
+        {page + 1}/{pageCount}
+      </p>
+      <p className={styles.hint} aria-label="手帳の操作">
+        <span className={styles.hintItem}>
+          <kbd>Space</kbd>
+          <span>で閉じる</span>
+        </span>
+        <span className={styles.hintItem}>
+          <kbd>A / D</kbd>
+          <span>でページを移動</span>
+        </span>
+      </p>
     </section>
   );
 }

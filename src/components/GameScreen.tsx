@@ -1,15 +1,19 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { CutsceneScreen } from "./CutsceneScreen";
 import { DialogueBox } from "./DialogueBox";
 import { EndTitleScreen } from "./EndTitleScreen";
 import { Notebook } from "./Notebook";
+import { NotebookIndicator } from "./NotebookIndicator";
 import { OpeningBlink } from "./OpeningBlink";
 import { ResultScreen } from "./ResultScreen";
+import { SceneCeilingLight } from "./SceneCeilingLight";
 import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
+import { assetPath } from "@/lib/assetPath";
 import { generateRound } from "@/lib/cipherGenerator";
 import { GAME_CONFIG } from "@/lib/gameConfig";
 import type {
@@ -29,7 +33,28 @@ import { buildNotebookSpreads } from "@/lib/notebookSpreads";
 import { playSound, preloadSounds } from "@/lib/sound";
 import styles from "./GameScreen.module.css";
 
-type FeedbackOutcome = "nextRound" | "retry" | "clear" | "gameOver";
+type FeedbackOutcome = "nextRound" | "clear";
+
+const OPENING_PLAYED_SESSION_KEY =
+  "language-deciphering-game:opening-played";
+
+function getInitialGamePhase(): GamePhase {
+  if (typeof window === "undefined") return "opening";
+
+  const navigationEntry = performance.getEntriesByType(
+    "navigation",
+  )[0] as PerformanceNavigationTiming | undefined;
+
+  if (navigationEntry?.type === "reload") return "introDialogue";
+
+  try {
+    return window.sessionStorage.getItem(OPENING_PLAYED_SESSION_KEY) === "true"
+      ? "introDialogue"
+      : "opening";
+  } catch {
+    return "opening";
+  }
+}
 
 function getPrefersReducedMotion() {
   if (typeof window === "undefined") return false;
@@ -43,23 +68,28 @@ function canUseNotebook(phase: GamePhase) {
 function SceneBackdrop() {
   return (
     <div className={styles.room} aria-hidden="true">
-      <div className={styles.ceilingGlow} />
-      <div className={styles.backWall} />
+      <SceneCeilingLight preload />
       <div className={styles.man}>
-        <div className={styles.head}>
-          <div className={styles.mask}>
-            <span className={styles.eyeLeft} />
-            <span className={styles.eyeRight} />
-          </div>
-        </div>
-        <div className={styles.body} />
+        <Image
+          className={styles.sceneImage}
+          src={assetPath(GAME_CONFIG.sceneAssets.maskedManNormal)}
+          alt=""
+          width={1254}
+          height={1254}
+          preload
+        />
       </div>
       <div className={styles.desk}>
-        <div className={styles.deskNotebook}>
-          <span className={styles.notebookSpine} />
-        </div>
-        <div className={styles.pen} />
+        <Image
+          className={styles.sceneImage}
+          src={assetPath(GAME_CONFIG.sceneAssets.deskNotebookPen)}
+          alt=""
+          width={1291}
+          height={617}
+          loading="eager"
+        />
       </div>
+      <div className={styles.vignette} />
     </div>
   );
 }
@@ -69,7 +99,8 @@ export function GameScreen() {
   const [dialogueLines, setDialogueLines] =
     useState<DialogueLine[]>(INTRO_DIALOGUES);
   const [dialogueIndex, setDialogueIndex] = useState(0);
-  const [gamePhase, setGamePhase] = useState<GamePhase>("opening");
+  const [gamePhase, setGamePhase] =
+    useState<GamePhase>(getInitialGamePhase);
   const [openingKey, setOpeningKey] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -80,8 +111,12 @@ export function GameScreen() {
   >({});
   const [answerJudgement, setAnswerJudgement] =
     useState<AnswerJudgement | null>(null);
+  const [clearedJudgementTokenIds, setClearedJudgementTokenIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const [feedbackOutcome, setFeedbackOutcome] =
     useState<FeedbackOutcome | null>(null);
+  const [wrongShakeSequence, setWrongShakeSequence] = useState(0);
   const [examples, setExamples] = useState<ExampleRecord[]>([]);
   const [isNotebookOpen, setIsNotebookOpen] = useState(false);
   const [notebookPage, setNotebookPage] = useState(0);
@@ -118,8 +153,7 @@ export function GameScreen() {
     gamePhase === "answering" &&
     !isNotebookOpen &&
     timeLeft > 0 &&
-    allTokensAnswered &&
-    answerJudgement === null;
+    allTokensAnswered;
 
   function startTerminalCutscene(
     status: ResultStatus,
@@ -187,7 +221,9 @@ export function GameScreen() {
     setSelectedAnswers({});
     setActiveTokenId(null);
     setAnswerJudgement(null);
+    setClearedJudgementTokenIds(new Set());
     setFeedbackOutcome(null);
+    setWrongShakeSequence(0);
     setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
     setTimeLeft(GAME_CONFIG.timeLimitSeconds);
     setGamePhase("exampleDialogue");
@@ -196,6 +232,16 @@ export function GameScreen() {
   useEffect(() => {
     preloadSounds();
   }, []);
+
+  useEffect(() => {
+    if (gamePhase !== "opening") return;
+
+    try {
+      window.sessionStorage.setItem(OPENING_PLAYED_SESSION_KEY, "true");
+    } catch {
+      // Storage restrictions must not prevent the game from starting.
+    }
+  }, [gamePhase]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -260,18 +306,22 @@ export function GameScreen() {
   }, [gamePhase, timeLeft]);
 
   useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      const target = event.target;
-      const isInteractiveTarget =
+    function isEditableEventTarget(target: EventTarget | null) {
+      return (
         target instanceof HTMLElement &&
-        target.matches(
-          "button, input, select, textarea, [contenteditable='true']",
-        );
+        target.matches("input, select, textarea, [contenteditable='true']")
+      );
+    }
 
-      if (isInteractiveTarget || !canUseNotebook(gamePhase)) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (isEditableEventTarget(event.target)) return;
 
       if (event.code === "Space") {
         event.preventDefault();
+        if (event.target instanceof HTMLButtonElement) {
+          event.target.blur();
+        }
+        if (!canUseNotebook(gamePhase)) return;
         if (event.repeat) return;
 
         if (isNotebookOpen) {
@@ -286,6 +336,7 @@ export function GameScreen() {
         return;
       }
 
+      if (!canUseNotebook(gamePhase)) return;
       if (!isNotebookOpen) return;
 
       if (event.key === "a" || event.key === "A") {
@@ -312,20 +363,27 @@ export function GameScreen() {
       }
     }
 
+    function handleKeyUp(event: KeyboardEvent) {
+      if (
+        event.code === "Space" &&
+        !isEditableEventTarget(event.target)
+      ) {
+        event.preventDefault();
+      }
+    }
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, [gamePhase, isNotebookOpen, notebookPage, pageCount]);
 
   useEffect(() => {
     if (gamePhase !== "answerFeedback" || !feedbackOutcome) return;
 
     const timerId = window.setTimeout(() => {
-      if (feedbackOutcome === "retry") {
-        setFeedbackOutcome(null);
-        setGamePhase("answering");
-        return;
-      }
-
       if (feedbackOutcome === "nextRound") {
         const nextLevel = difficultyLevel + 1;
         setDifficultyLevel(nextLevel);
@@ -333,9 +391,7 @@ export function GameScreen() {
         return;
       }
 
-      startTerminalCutscene(
-        feedbackOutcome === "clear" ? "clear" : "gameOver",
-      );
+      startTerminalCutscene("clear");
     }, GAME_CONFIG.answerFeedbackMs);
 
     return () => window.clearTimeout(timerId);
@@ -434,7 +490,13 @@ export function GameScreen() {
       ...previous,
       [tokenId]: value,
     }));
-    setAnswerJudgement(null);
+    if (answerJudgement) {
+      setClearedJudgementTokenIds((previous) => {
+        const next = new Set(previous);
+        next.add(tokenId);
+        return next;
+      });
+    }
     setFeedbackOutcome(null);
   }
 
@@ -444,14 +506,15 @@ export function GameScreen() {
   }
 
   function handleSubmitAnswer() {
-    if (!currentQuestion || !canSubmitAnswer || answerJudgement) return;
+    if (!currentQuestion || !canSubmitAnswer) return;
 
     const judgedAt = Date.now();
     const judgement = judgeAnswer(currentQuestion, selectedAnswers);
+    setClearedJudgementTokenIds(new Set());
     setAnswerJudgement(judgement);
-    setGamePhase("answerFeedback");
 
     if (judgement.isCorrect) {
+      setGamePhase("answerFeedback");
       recordCorrectAnswer(currentQuestion, selectedAnswers);
       setCorrectCount((count) => count + 1);
 
@@ -468,13 +531,13 @@ export function GameScreen() {
     setMistakeCount((count) => count + 1);
 
     if (mistakesRemaining <= 0) {
-      setEndedAt((value) => value ?? judgedAt);
-      setFeedbackOutcome("gameOver");
+      startTerminalCutscene("gameOver", judgedAt);
       return;
     }
 
+    setWrongShakeSequence((sequence) => sequence + 1);
     setMistakesRemaining((count) => Math.max(count - 1, 0));
-    setFeedbackOutcome("retry");
+    setFeedbackOutcome(null);
   }
 
   function resetGame() {
@@ -488,7 +551,9 @@ export function GameScreen() {
     setSelectedAnswers({});
     setActiveTokenId(null);
     setAnswerJudgement(null);
+    setClearedJudgementTokenIds(new Set());
     setFeedbackOutcome(null);
+    setWrongShakeSequence(0);
     setExamples([]);
     setIsNotebookOpen(false);
     setNotebookPage(0);
@@ -528,7 +593,7 @@ export function GameScreen() {
     gamePhase === "answerFeedback"
       ? "判定結果を表示中"
       : gamePhase === "answering"
-        ? "暗号単語を選び、日本語を割り当ててください / Spaceで手帳"
+        ? "Spaceで手帳を開く"
         : gamePhase === "question"
           ? "左クリックで解答を開始"
           : "左クリックで進む";
@@ -598,16 +663,27 @@ export function GameScreen() {
         ) : (
           <>
             {showTimer ? (
-              <TimerDisplay
-                timeLeft={timeLeft}
-                warningTime={GAME_CONFIG.warningTimeSeconds}
-                mistakesRemaining={mistakesRemaining}
-              />
+              <div className={styles.statusCluster}>
+                <TimerDisplay
+                  timeLeft={timeLeft}
+                  warningTime={GAME_CONFIG.warningTimeSeconds}
+                  mistakesRemaining={mistakesRemaining}
+                />
+                {gamePhase === "answering" && !isNotebookOpen ? (
+                  <NotebookIndicator
+                    showNew={hasUnreadExamples}
+                    newAnimationHalfCycleMs={
+                      GAME_CONFIG.newAnimationHalfCycleMs
+                    }
+                  />
+                ) : null}
+              </div>
             ) : null}
             {currentDialogue && !showAnswerDialog ? (
               <DialogueBox
                 line={currentDialogue}
                 instruction={instruction}
+                actionCue={gamePhase === "question" ? "answer→" : "next→"}
               />
             ) : null}
             {showAnswerDialog && currentQuestion ? (
@@ -620,6 +696,8 @@ export function GameScreen() {
                 canSubmit={canSubmitAnswer}
                 disabled={gamePhase === "answerFeedback"}
                 judgement={answerJudgement}
+                clearedJudgementTokenIds={clearedJudgementTokenIds}
+                wrongShakeSequence={wrongShakeSequence}
                 onSelectToken={handleSelectToken}
                 onSelectWord={handleSelectWord}
                 onSubmit={handleSubmitAnswer}
@@ -630,8 +708,6 @@ export function GameScreen() {
               spread={currentNotebookSpread}
               page={notebookPage}
               pageCount={pageCount}
-              newAnimationHalfCycleMs={GAME_CONFIG.newAnimationHalfCycleMs}
-              showNew={hasUnreadExamples}
             />
           </>
         )}

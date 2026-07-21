@@ -11,23 +11,25 @@
 }
 
 .root h1 {
+  position: relative;
+  z-index: 1;
   margin: 0;
-  font-size: clamp(56px, 8vw, 128px);
+  font-family: var(--font-display), "Inter", sans-serif;
+  font-size: clamp(56px, 7.1875cqw, 138px);
+  font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
 .gameOverTitle {
-  color: #b23a3a;
-  font-family: sans-serif;
+  color: #b23b3b;
   text-shadow: 0 0 18px rgba(178, 58, 58, 0.4);
   animation: gameOverImpact var(--end-title-duration) both;
 }
 
 .clearTitle {
-  position: relative;
   overflow: hidden;
-  color: #e7e0c3;
-  font-family: serif;
+  color: #e8e0c2;
   animation: gameClearReveal var(--end-title-duration) both;
 }
 

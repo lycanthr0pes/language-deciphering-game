@@ -1,0 +1,25 @@
+.root {
+  position: absolute;
+  top: -10.4166667%;
+  left: 31.875%;
+  z-index: 0;
+  width: 36.25%;
+  height: 94.4444444%;
+  pointer-events: none;
+}
+
+.asset {
+  position: absolute;
+  top: 1.78%;
+  right: 7.4%;
+  bottom: 25%;
+  left: 7.4%;
+}
+
+.image {
+  display: block;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}

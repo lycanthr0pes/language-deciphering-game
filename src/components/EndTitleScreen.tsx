@@ -2,6 +2,7 @@ import type { AnimationEvent, CSSProperties } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import { GAME_CONFIG } from "@/lib/gameConfig";
 import type { ResultStatus } from "@/lib/gameTypes";
+import { SceneCeilingLight } from "./SceneCeilingLight";
 import styles from "./EndTitleScreen.module.css";
 
 type EndTitleScreenProps = {
@@ -58,6 +59,7 @@ export function EndTitleScreen({
       style={style}
       onAnimationEnd={handleAnimationEnd}
     >
+      <SceneCeilingLight />
       <h1 className={status === "clear" ? styles.clearTitle : styles.gameOverTitle}>
         {status === "clear" ? "GAME CLEAR" : "GAME OVER"}
       </h1>
