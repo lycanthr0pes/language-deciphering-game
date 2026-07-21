@@ -658,7 +658,6 @@ export function GameScreen() {
             clearTimeSeconds={clearTimeSeconds}
             correctCount={correctCount}
             mistakeCount={mistakeCount}
-            onRetry={resetGame}
           />
         ) : (
           <>

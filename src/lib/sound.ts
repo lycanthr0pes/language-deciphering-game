@@ -92,3 +92,7 @@ export function playSound(key: SoundKey) {
     // 読込前のシークなどが失敗してもゲーム進行は止めない。
   }
 }
+
+export function playButtonPressSound() {
+  playSound("dialogueNext");
+}

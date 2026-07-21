@@ -6,14 +6,12 @@ type ResultScreenProps = {
   clearTimeSeconds: number;
   correctCount: number;
   mistakeCount: number;
-  onRetry: () => void;
 };
 
 export function ResultScreen({
   clearTimeSeconds,
   correctCount,
   mistakeCount,
-  onRetry,
 }: ResultScreenProps) {
   return (
     <div className={styles.root}>
@@ -34,15 +32,6 @@ export function ResultScreen({
             <dd>{mistakeCount}</dd>
           </div>
         </dl>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onRetry();
-          }}
-        >
-          もう一度遊ぶ
-        </button>
         <p className={styles.instruction}>左クリックでリトライ</p>
       </section>
     </div>

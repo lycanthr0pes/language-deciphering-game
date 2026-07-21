@@ -66,36 +66,9 @@
   font-size: clamp(14px, 1.4583cqw, 28px);
 }
 
-.result button {
-  position: absolute;
-  top: 40.5556cqh;
-  left: 50%;
-  width: 13.5417cqw;
-  height: 5.9259cqh;
-  padding: 0;
-  transform: translateX(-50%);
-  border: 2px solid #66abff;
-  border-radius: 4px;
-  background: #111111;
-  color: #dbedff;
-  font-size: clamp(12px, 1.1458cqw, 22px);
-  cursor: pointer;
-}
-
-.result button:hover,
-.result button:focus-visible {
-  border-color: #a8cfff;
-  filter: brightness(1.15);
-}
-
-.result button:focus-visible {
-  outline: 2px solid #a8cfff;
-  outline-offset: 3px;
-}
-
 .instruction {
   position: absolute;
-  top: 49.6296cqh;
+  bottom: 4.4444cqh;
   right: 0;
   left: 0;
   margin: 0;
@@ -124,13 +97,7 @@
     grid-template-columns: 1fr auto;
   }
 
-  .result button {
-    top: 70%;
-    width: 150px;
-    height: 42px;
-  }
-
   .instruction {
-    top: 88%;
+    bottom: 6%;
   }
 }

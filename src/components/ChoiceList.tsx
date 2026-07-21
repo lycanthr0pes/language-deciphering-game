@@ -3,6 +3,7 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import { CipherText } from "./CipherText";
 import { GAME_CONFIG } from "@/lib/gameConfig";
+import { playButtonPressSound } from "@/lib/sound";
 import type { AnswerJudgement } from "@/lib/gameTypes";
 import styles from "./ChoiceList.module.css";
 
@@ -111,7 +112,10 @@ export function ChoiceList({
                   type="button"
                   disabled={disabled}
                   aria-label={`暗号単語${index + 1}、解答${answer ?? "未選択"}${result ? `、${result === "correct" ? "正答" : "誤答"}` : ""}`}
-                  onClick={() => onSelectToken(token.id)}
+                  onClick={() => {
+                    playButtonPressSound();
+                    onSelectToken(token.id);
+                  }}
                 >
                   <span className={styles.cipherToken}>
                     <CipherText ariaLabel={`暗号単語${index + 1}`}>
@@ -137,6 +141,7 @@ export function ChoiceList({
             disabled={disabled || activeTokenId === null}
             onClick={() => {
               if (activeTokenId === null) return;
+              playButtonPressSound();
               onSelectWord(activeTokenId, choice);
             }}
           >
@@ -149,7 +154,10 @@ export function ChoiceList({
         className={canSubmit ? styles.submitButton : styles.disabledSubmitButton}
         type="button"
         disabled={disabled || !canSubmit}
-        onClick={onSubmit}
+        onClick={() => {
+          playButtonPressSound();
+          onSubmit();
+        }}
       >
         解答する
       </button>
