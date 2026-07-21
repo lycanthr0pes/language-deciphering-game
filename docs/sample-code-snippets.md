@@ -264,6 +264,25 @@ export function playSound(key: SoundKey) {
     entry.isPlaying = false;
   });
 }
+
+export function playButtonPressSound() {
+  playSound("dialogueNext");
+}
+```
+
+すべての有効なnative `button`は、処理callbackの直前に共通関数を1回呼ぶ。`disabled`なら`onClick`自体が発火しないため、押下音も鳴らない。
+
+```tsx
+<button
+  type="button"
+  disabled={!canSubmit}
+  onClick={() => {
+    playButtonPressSound();
+    onSubmit();
+  }}
+>
+  解答する
+</button>
 ```
 
 ## 7. 正誤判定
@@ -626,14 +645,12 @@ type ResultScreenProps = {
   elapsedSeconds: number;
   correctCount: number;
   mistakeCount: number;
-  onRetry: () => void;
 };
 
 export function ResultScreen({
   elapsedSeconds,
   correctCount,
   mistakeCount,
-  onRetry,
 }: ResultScreenProps) {
   return (
     <div className={styles.root}>
@@ -643,7 +660,6 @@ export function ResultScreen({
         <p>経過時間: {formatTime(elapsedSeconds)}</p>
         <p>正解回数: {correctCount}</p>
         <p>失敗回数: {mistakeCount}</p>
-        <button type="button" onClick={onRetry}>もう一度遊ぶ</button>
         <p>左クリックでリトライ</p>
       </section>
     </div>
@@ -651,4 +667,4 @@ export function ResultScreen({
 }
 ```
 
-画面全体の左クリックでも同じ`onRetry`へ接続し、二重実行を防ぐ。`CutsceneScreen`と`EndTitleScreen`にも同じ`SceneCeilingLight`を置き、まばたき、発砲フラッシュ、発砲直後の暗転だけが一時的に覆う。
+画面全体の左クリックを`GameScreen`のリトライ処理へ接続する。専用のリトライボタンは表示しない。`CutsceneScreen`と`EndTitleScreen`にも同じ`SceneCeilingLight`を置き、まばたき、発砲フラッシュ、発砲直後の暗転だけが一時的に覆う。

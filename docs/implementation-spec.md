@@ -296,7 +296,6 @@ export type ResultScreenProps = {
   elapsedSeconds: number;
   correctCount: number;
   mistakeCount: number;
-  onRetry: () => void;
 };
 ```
 
@@ -471,6 +470,7 @@ export function CipherText({
 - 前回判定後に値が実際に変わった場合は、そのトークンIDだけ`clearedJudgementTokenIds`へ追加する。`answerJudgement`自体は残し、未変更欄の色分けと直前の正答数を維持する。
 - 全トークンに値があり、操作可能な時だけ送信できる。判定結果が残っていても再送信できる。
 - 選択肢、トークン、解答ボタンでは`stopPropagation()`し、背景の会話送りを発火させない。
+- トークン、候補、解答ボタンの有効な`onClick`では、親callbackの直前に`playButtonPressSound()`を1回呼ぶ。これによりマウスと標準の`Enter`押下へ同じ音を付け、無効なnative `button`と`Space`では鳴らさない。
 - 候補ごとに独立した`button`を使い、候補群には共通の大枠を付けない。各候補は150×54px相当、`#111`背景、`#666`の2px枠、4px角丸、20px相当の文字とし、ホバー・フォーカス・無効状態は枠色と明度で示す。
 
 ## 14. 正誤判定
@@ -609,6 +609,7 @@ export function assetPath(path: string) {
 
 `SOUND_PATHS`は`/assets/...`を直接`Audio`へ渡さず、`assetPath()`で解決する。`preloadSounds()`は全SoundKeyを3要素ずつ生成して`load()`し、ゲーム起動を待たせない。`playSound()`は空き要素を優先し、すべて再生中なら開始時刻が最も古い要素を停止して先頭から再生する。`load()`と`play()`の失敗はcatchし、ゲーム進行を止めない。再描画する`useEffect`ではなく、状態遷移を開始するイベントから各音を1回だけ再生する。
 
+- `playButtonPressSound()`は`playSound("dialogueNext")`を呼ぶ共通関数とし、すべての有効なボタンの`onClick`から1回だけ呼ぶ。祖先要素で一括再生せず、背景クリックやイベント伝播による二重再生を防ぐ。
 - `openNote`はSpaceで手帳を開いた時と、A/Dで見開き番号が変わった時だけ鳴らす。
 - `wrongAnswer`は`handleSubmitAnswer()`で`judgement.isCorrect === false`が確定した直後に鳴らし、継続可能／終了条件のどちらの誤答でも1送信につき1回とする。時間切れでは鳴らさない。
 - `wrong-answer.mp3`は`public/assets/sounds`へ配置する。未配置中は実音確認未完了として扱う。

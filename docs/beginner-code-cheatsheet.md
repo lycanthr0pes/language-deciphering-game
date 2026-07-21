@@ -65,7 +65,6 @@ export function GameScreen() {
 | `GameScreen.tsx` | state、クリック、キーボード入力を使うため |
 | `ChoiceList.tsx` | ボタンのクリックを扱うため |
 | `NotebookIndicator.tsx` | 解答中の手帳アイコンとNEWのCSSアニメーションを描画する場合 |
-| `ResultScreen.tsx` | リトライクリックを扱うため |
 
 ## 4. `useState`
 
