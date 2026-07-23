@@ -1,3 +1,6 @@
+export type Difficulty = "easy" | "hard";
+export type MenuView = "root" | "guide" | "difficulty";
+
 export type DialogueType = "normal" | "cipher" | "translation" | "answer";
 export type Speaker = "narration" | "man";
 
@@ -8,16 +11,57 @@ export type DialogueLine = {
   speaker: Speaker;
 };
 
-export type InternalCategory =
+export type WordCategory =
   | "color"
   | "quality"
   | "quantity"
-  | "verb"
-  | "humanNoun"
-  | "animalNoun";
+  | "noun"
+  | "verb";
 
-export type CandidateIndex = 1 | 2;
-export type CipherId = `${InternalCategory}-${CandidateIndex}`;
+export type NounKind = "human" | "animal" | "object";
+export type CipherSlotIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type ShortCipherSlotIndex = 1 | 2 | 3 | 4;
+
+export type CipherId =
+  | `color-${ShortCipherSlotIndex}`
+  | `quality-${ShortCipherSlotIndex}`
+  | `quantity-${ShortCipherSlotIndex}`
+  | `noun-${CipherSlotIndex}`
+  | `verb-${ShortCipherSlotIndex}`;
+
+export type WordId =
+  | "color-red"
+  | "color-blue"
+  | "color-black"
+  | "color-white"
+  | "quality-large"
+  | "quality-small"
+  | "quality-old"
+  | "quality-broken"
+  | "quantity-some"
+  | "quantity-many"
+  | "quantity-one-human"
+  | "quantity-one-animal"
+  | "noun-man"
+  | "noun-woman"
+  | "noun-dog"
+  | "noun-cat"
+  | "noun-bird"
+  | "noun-fish"
+  | "noun-chair"
+  | "noun-door"
+  | "verb-see"
+  | "verb-chase"
+  | "verb-sleep"
+  | "verb-creak";
+
+export type WordEntry = {
+  wordId: WordId;
+  category: WordCategory;
+  ja: string;
+  nounKind?: NounKind;
+  allowedNounKinds?: readonly NounKind[];
+};
 
 export type CipherGlyphEntry = {
   cipherId: CipherId;
@@ -27,8 +71,9 @@ export type CipherGlyphEntry = {
 export type CipherToken = {
   id: string;
   cipherId: CipherId;
+  wordId: WordId;
   glyphText: string;
-  category: InternalCategory;
+  category: WordCategory;
   correctJa: string;
 };
 
@@ -63,6 +108,7 @@ export type AnswerJudgement = {
 };
 
 export type GamePhase =
+  | "menu"
   | "opening"
   | "introDialogue"
   | "exampleDialogue"
@@ -88,3 +134,51 @@ export type SoundKey =
   | "closeNote"
   | "openNote"
   | "wrongAnswer";
+
+export type DifficultyConfig = {
+  timeLimitSeconds: number | null;
+  warningTimeSeconds: number | null;
+  safeMistakeCount: 0 | 1;
+};
+
+export type SentencePattern = readonly WordCategory[];
+
+export type StageGenerationRule = {
+  level: number;
+  exampleCount: number;
+  pattern: SentencePattern;
+  unknownWordCount: 0 | 1 | 2;
+  choiceCount: 4 | 6 | 8 | 10;
+  fallbackSeed: string;
+};
+
+export type WordAssignments = Readonly<Record<CipherId, WordId>>;
+
+export type GeneratedStage = {
+  level: number;
+  examples: readonly (readonly WordId[])[];
+  question: readonly WordId[];
+  unknownWordIds: readonly WordId[];
+  choiceCount: 4 | 6 | 8 | 10;
+  choiceCandidatesByTokenId: Readonly<Record<string, readonly string[]>>;
+};
+
+export type RunDefinition = {
+  runSeed: string;
+  wordAssignments: WordAssignments;
+  stages: readonly GeneratedStage[];
+};
+
+export type MainMenuProps = {
+  view: MenuView;
+  selectedDifficulty: Difficulty | null;
+  onOpenGuide: () => void;
+  onOpenDifficulty: () => void;
+  onBack: () => void;
+  onSelectDifficulty: (difficulty: Difficulty) => void;
+  onStart: () => void;
+};
+
+export type DifficultyBadgeProps = {
+  difficulty: Difficulty;
+};
