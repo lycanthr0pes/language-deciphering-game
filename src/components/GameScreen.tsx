@@ -6,6 +6,7 @@ import { ChoiceList } from "./ChoiceList";
 import { CutsceneScreen } from "./CutsceneScreen";
 import { DialogueBox } from "./DialogueBox";
 import { EndTitleScreen } from "./EndTitleScreen";
+import { MainMenu } from "./MainMenu";
 import { Notebook } from "./Notebook";
 import { NotebookIndicator } from "./NotebookIndicator";
 import { OpeningBlink } from "./OpeningBlink";
@@ -19,10 +20,12 @@ import { GAME_CONFIG } from "@/lib/gameConfig";
 import type {
   AnswerJudgement,
   AssetStatus,
+  Difficulty,
   DialogueLine,
   ExampleRecord,
   FontStatus,
   GamePhase,
+  MenuView,
   Question,
   ResultStatus,
 } from "@/lib/gameTypes";
@@ -39,21 +42,8 @@ const OPENING_PLAYED_SESSION_KEY =
   "language-deciphering-game:opening-played";
 
 function getInitialGamePhase(): GamePhase {
-  if (typeof window === "undefined") return "opening";
-
-  const navigationEntry = performance.getEntriesByType(
-    "navigation",
-  )[0] as PerformanceNavigationTiming | undefined;
-
-  if (navigationEntry?.type === "reload") return "introDialogue";
-
-  try {
-    return window.sessionStorage.getItem(OPENING_PLAYED_SESSION_KEY) === "true"
-      ? "introDialogue"
-      : "opening";
-  } catch {
-    return "opening";
-  }
+  // FV007 stub: show main menu after assets load. Full reload/menu rules are FV011.
+  return "menu";
 }
 
 function getPrefersReducedMotion() {
@@ -90,6 +80,16 @@ function SceneBackdrop() {
         />
       </div>
       <div className={styles.vignette} />
+    </div>
+  );
+}
+
+function MenuBackdrop() {
+  return (
+    <div className={`${styles.room} ${styles.menuRoom}`} aria-hidden="true">
+      <div className={styles.menuLight}>
+        <SceneCeilingLight preload />
+      </div>
     </div>
   );
 }
@@ -135,6 +135,10 @@ export function GameScreen() {
   const [fontStatus, setFontStatus] = useState<FontStatus>("loading");
   const [openingAssetStatus, setOpeningAssetStatus] =
     useState<AssetStatus>("loading");
+  const [menuView, setMenuView] = useState<MenuView>("root");
+  const [pendingDifficulty, setPendingDifficulty] = useState<Difficulty | null>(
+    null,
+  );
 
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
   const notebookSpreads = buildNotebookSpreads(
@@ -543,7 +547,9 @@ export function GameScreen() {
   function resetGame() {
     terminalTransitionStartedRef.current = false;
     setOpeningKey((key) => key + 1);
-    setGamePhase("opening");
+    setMenuView("root");
+    setPendingDifficulty(null);
+    setGamePhase("menu");
     setDialogueLines(INTRO_DIALOGUES);
     setDialogueIndex(0);
     setCurrentQuestion(null);
@@ -570,8 +576,18 @@ export function GameScreen() {
     setReducedMotion(getPrefersReducedMotion());
   }
 
+  function handleMenuStart() {
+    if (pendingDifficulty === null) return;
+
+    // FV007 stub: proceed into the existing opening flow without RunDefinition (FV011).
+    setStartedAt(Date.now());
+    setOpeningKey((key) => key + 1);
+    setGamePhase("opening");
+  }
+
   function handleMainClick() {
     if (
+      gamePhase === "menu" ||
       gamePhase === "opening" ||
       gamePhase === "endTitle" ||
       gamePhase === "clearCutscene" ||
@@ -611,7 +627,7 @@ export function GameScreen() {
     return (
       <main className={styles.screen}>
         <section className={styles.stage}>
-          <SceneBackdrop />
+          <MenuBackdrop />
           <p className={styles.loadingMessage} role="alert">
             {message}
           </p>
@@ -624,7 +640,7 @@ export function GameScreen() {
     return (
       <main className={styles.screen}>
         <section className={styles.stage}>
-          <SceneBackdrop />
+          <MenuBackdrop />
           <p className={styles.loadingMessage}>読み込み中...</p>
         </section>
       </main>
@@ -634,9 +650,19 @@ export function GameScreen() {
   return (
     <main className={styles.screen} onClick={handleMainClick}>
       <section className={styles.stage} aria-label="暗号解読ゲーム">
-        <SceneBackdrop />
+        {gamePhase === "menu" ? <MenuBackdrop /> : <SceneBackdrop />}
 
-        {gamePhase === "opening" ? (
+        {gamePhase === "menu" ? (
+          <MainMenu
+            view={menuView}
+            selectedDifficulty={pendingDifficulty}
+            onOpenGuide={() => setMenuView("guide")}
+            onOpenDifficulty={() => setMenuView("difficulty")}
+            onBack={() => setMenuView("root")}
+            onSelectDifficulty={setPendingDifficulty}
+            onStart={handleMenuStart}
+          />
+        ) : gamePhase === "opening" ? (
           <OpeningBlink
             key={openingKey}
             reducedMotion={reducedMotion}

@@ -30,6 +30,17 @@
   background: #020202;
 }
 
+.menuRoom {
+  background: #020202;
+}
+
+.menuLight {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  filter: brightness(0.72) saturate(0.85);
+}
+
 .man {
   position: absolute;
   top: 0;
