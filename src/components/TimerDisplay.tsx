@@ -2,27 +2,40 @@ import { formatTime } from "@/utils/formatTime";
 import styles from "./TimerDisplay.module.css";
 
 type TimerDisplayProps = {
-  timeLeft: number;
-  warningTime: number;
-  mistakesRemaining: number;
+  timeLeft?: number | null;
+  warningTime?: number | null;
+  mistakesRemaining?: number | null;
 };
 
 export function TimerDisplay({
-  timeLeft,
-  warningTime,
-  mistakesRemaining,
+  timeLeft = null,
+  warningTime = null,
+  mistakesRemaining = null,
 }: TimerDisplayProps) {
-  const isWarning = timeLeft <= warningTime;
-  const isDanger = mistakesRemaining <= 0;
+  const showTimer = timeLeft !== null;
+  const showMistakes = mistakesRemaining !== null;
+  const isWarning =
+    showTimer && warningTime !== null && timeLeft <= warningTime;
+  const isDanger = showMistakes && mistakesRemaining <= 0;
+
+  if (!showTimer && !showMistakes) return null;
+
+  const mistakesClassName = isDanger
+    ? styles.warning
+    : showTimer
+      ? styles.subText
+      : styles.normal;
 
   return (
     <div className={styles.timer}>
-      <p className={isWarning ? styles.warning : styles.normal}>
-        残り時間 {formatTime(timeLeft)}
-      </p>
-      <p className={isDanger ? styles.warning : styles.subText}>
-        間違い可能 {mistakesRemaining}
-      </p>
+      {showTimer ? (
+        <p className={isWarning ? styles.warning : styles.normal}>
+          残り時間 {formatTime(timeLeft)}
+        </p>
+      ) : null}
+      {showMistakes ? (
+        <p className={mistakesClassName}>間違い可能 {mistakesRemaining}</p>
+      ) : null}
     </div>
   );
 }
