@@ -1,17 +1,15 @@
 .indicator {
   position: relative;
+  display: flex;
   width: 100%;
-  height: 8.5185cqh;
+  flex-direction: column;
+  align-items: center;
   color: #d8cfb6;
   filter: drop-shadow(0 0 5px rgba(112, 20, 20, 0.55));
   pointer-events: none;
 }
 
 .newLabel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
   color: #ebd999;
   font-size: clamp(11px, 1.1458cqw, 22px);
   line-height: 1.1;
@@ -21,17 +19,24 @@
 }
 
 .icon {
-  position: absolute;
-  top: 2.5926cqh;
-  left: 50%;
+  display: block;
   width: 2.9167cqw;
   height: 5.9259cqh;
-  transform: translateX(-50%);
+  margin-top: 0.3704cqh;
   fill: rgba(9, 9, 9, 0.82);
   stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.hint {
+  margin: 0.5556cqh 0 0;
+  color: #aba69c;
+  font-size: clamp(9px, 0.7813cqw, 15px);
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 
 @keyframes floatNew {
@@ -50,13 +55,13 @@
 }
 
 @container (max-width: 720px) or (max-height: 430px) {
-  .indicator {
-    height: 72px;
-  }
-
   .icon {
-    top: 22px;
     width: 42px;
     height: 48px;
+    margin-top: 4px;
+  }
+
+  .hint {
+    margin-top: 4px;
   }
 }

@@ -33,6 +33,7 @@ export function NotebookIndicator({
         <path d="M14 3v56M20 16h21M20 25h21M20 34h17" />
         <path d="M5 10h9M5 20h9M5 30h9M5 40h9M5 50h9" />
       </svg>
+      <p className={styles.hint}>Spaceで手帳を開く</p>
     </div>
   );
 }
