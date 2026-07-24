@@ -564,7 +564,7 @@ export function GameScreen() {
   function resetGame() {
     terminalTransitionStartedRef.current = false;
     setOpeningKey((key) => key + 1);
-    setMenuView("root");
+    setMenuView("difficulty");
     setPendingDifficulty(null);
     setDifficulty(null);
     setGamePhase("menu");
@@ -712,6 +712,7 @@ export function GameScreen() {
             clearTimeSeconds={clearTimeSeconds}
             correctCount={correctCount}
             mistakeCount={mistakeCount}
+            onReturnToDifficulty={resetGame}
           />
         ) : (
           <>

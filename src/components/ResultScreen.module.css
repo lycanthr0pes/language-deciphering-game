@@ -78,6 +78,34 @@
   text-align: center;
 }
 
+.returnButton {
+  position: absolute;
+  bottom: 4.4444cqh;
+  left: 50%;
+  width: min(58%, 280px);
+  height: 5.1852cqh;
+  padding: 0;
+  transform: translateX(-50%);
+  border: 2px solid #66abff;
+  border-radius: 4px;
+  background: #111111;
+  color: #dbedff;
+  font-size: clamp(12px, 1.1458cqw, 22px);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.returnButton:hover,
+.returnButton:focus-visible {
+  border-color: #8eaed0;
+  filter: brightness(1.15);
+}
+
+.returnButton:focus-visible {
+  outline: 2px solid #a8cfff;
+  outline-offset: 2px;
+}
+
 @container (max-width: 720px) or (max-height: 430px) {
   .result {
     top: 15%;
@@ -97,7 +125,13 @@
     grid-template-columns: 1fr auto;
   }
 
-  .instruction {
+  .instruction,
+  .returnButton {
     bottom: 6%;
+  }
+
+  .returnButton {
+    width: min(70%, 240px);
+    height: 36px;
   }
 }
