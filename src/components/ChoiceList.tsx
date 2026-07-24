@@ -28,6 +28,16 @@ type ChoiceListProps = {
   onSubmit: () => void;
 };
 
+const MAX_CHOICES_PER_ROW = 5;
+
+/** 1行あたり最大5個を保ちつつ、行ごとの個数ができるだけ均等になる列数を返す。 */
+function getChoiceColumns(choiceCount: number): number {
+  if (choiceCount <= 0) return 1;
+  if (choiceCount <= MAX_CHOICES_PER_ROW) return choiceCount;
+  const rowCount = Math.ceil(choiceCount / MAX_CHOICES_PER_ROW);
+  return Math.ceil(choiceCount / rowCount);
+}
+
 export function ChoiceList({
   tokens,
   choices,
@@ -44,8 +54,10 @@ export function ChoiceList({
   onSubmit,
 }: ChoiceListProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const choiceColumns = getChoiceColumns(choices.length);
   const layoutStyle = {
     "--token-count": Math.max(tokens.length, 1),
+    "--choice-columns": choiceColumns,
     "--wrong-answer-shake-duration": `${GAME_CONFIG.wrongAnswerShakeMs}ms`,
   } as CSSProperties;
 
@@ -132,36 +144,42 @@ export function ChoiceList({
         </div>
       </div>
 
-      <div className={styles.words}>
-        {choices.map((choice) => (
-          <button
-            key={choice}
-            className={styles.wordButton}
-            type="button"
-            disabled={disabled || activeTokenId === null}
-            onClick={() => {
-              if (activeTokenId === null) return;
-              playButtonPressSound();
-              onSelectWord(activeTokenId, choice);
-            }}
-          >
-            {choice}
-          </button>
-        ))}
-      </div>
+      <div className={styles.controls}>
+        <div className={styles.words}>
+          {choices.map((choice) => (
+            <button
+              key={choice}
+              className={styles.wordButton}
+              type="button"
+              disabled={disabled || activeTokenId === null}
+              onClick={() => {
+                if (activeTokenId === null) return;
+                playButtonPressSound();
+                onSelectWord(activeTokenId, choice);
+              }}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
 
-      <button
-        className={canSubmit ? styles.submitButton : styles.disabledSubmitButton}
-        type="button"
-        disabled={disabled || !canSubmit}
-        onClick={() => {
-          playButtonPressSound();
-          onSubmit();
-        }}
-      >
-        解答する
-      </button>
-      <p className={styles.instruction}>{instruction}</p>
+        <button
+          className={
+            canSubmit ? styles.submitButton : styles.disabledSubmitButton
+          }
+          type="button"
+          disabled={disabled || !canSubmit}
+          onClick={() => {
+            playButtonPressSound();
+            onSubmit();
+          }}
+        >
+          解答する
+        </button>
+      </div>
+      {instruction ? (
+        <p className={styles.instruction}>{instruction}</p>
+      ) : null}
     </section>
   );
 }

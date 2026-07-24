@@ -691,7 +691,9 @@ export function GameScreen() {
                 choices={getActiveChoices()}
                 selectedAnswers={selectedAnswers}
                 activeTokenId={activeTokenId}
-                instruction={instruction}
+                instruction={
+                  gamePhase === "answerFeedback" ? instruction : ""
+                }
                 canSubmit={canSubmitAnswer}
                 disabled={gamePhase === "answerFeedback"}
                 judgement={answerJudgement}

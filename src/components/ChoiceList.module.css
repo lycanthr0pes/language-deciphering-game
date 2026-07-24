@@ -189,22 +189,38 @@
   box-shadow: none;
 }
 
-.words {
+.controls {
   position: absolute;
   top: 19.8148cqh;
-  left: 35cqw;
+  left: 50%;
   display: flex;
-  height: 5cqh;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 1.1458cqw;
+  width: max-content;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.8519cqh;
+  transform: translateX(-50%);
 }
 
-.feedback .words {
+.feedback .controls {
   top: 23.1481cqh;
 }
 
-.locked .words {
+.words {
+  display: flex;
+  width: calc(
+    var(--choice-columns) * 7.8125cqw +
+      (var(--choice-columns) - 1) * 1.1458cqw
+  );
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: stretch;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 0.7407cqh 1.1458cqw;
+}
+
+.locked .controls {
   opacity: 0.45;
 }
 
@@ -242,23 +258,10 @@
 
 .submitButton,
 .disabledSubmitButton {
-  position: absolute;
-  top: 27.4074cqh;
-  left: 39.9479cqw;
   width: 9.8958cqw;
   height: 5.1852cqh;
   padding: 0;
   background: #111111;
-}
-
-.feedback .submitButton,
-.feedback .disabledSubmitButton {
-  top: 30.1852cqh;
-}
-
-.locked .submitButton,
-.locked .disabledSubmitButton {
-  opacity: 0.45;
 }
 
 .submitButton {
@@ -279,19 +282,19 @@
 
 .instruction {
   position: absolute;
-  top: 36.1111cqh;
-  left: 52.5cqw;
+  right: 0;
+  bottom: 1.8519cqh;
+  left: 0;
   margin: 0;
   color: #aba69c;
   font-size: clamp(10px, 0.8854cqw, 17px);
   line-height: 1.2;
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
 }
 
 .feedback .instruction {
-  top: 38.3333cqh;
-  left: 76.4583cqw;
+  bottom: 1.4815cqh;
 }
 
 @container (max-width: 900px) or (max-height: 520px) {
@@ -326,12 +329,8 @@
 
   .tokens,
   .feedback .tokens,
-  .words,
-  .feedback .words,
-  .submitButton,
-  .disabledSubmitButton,
-  .feedback .submitButton,
-  .feedback .disabledSubmitButton,
+  .controls,
+  .feedback .controls,
   .instruction,
   .feedback .instruction,
   .judgementCount {
@@ -369,26 +368,40 @@
     padding: 2px 4px;
   }
 
-  .words,
-  .feedback .words {
-    height: auto;
+  .controls,
+  .feedback .controls {
+    width: 100%;
+    max-width: none;
+    gap: 8px;
     align-self: center;
+  }
+
+  .words {
+    width: min(
+      100%,
+      calc(
+        var(--choice-columns) * 82px + (var(--choice-columns) - 1) * 8px
+      )
+    );
+    gap: 6px 8px;
   }
 
   .wordButton {
     width: auto;
     min-width: 82px;
+    flex: 0 0
+      calc(
+        (100% - (var(--choice-columns) - 1) * 8px) / var(--choice-columns)
+      );
+    max-width: 120px;
     height: 32px;
     padding: 0 10px;
   }
 
   .submitButton,
-  .disabledSubmitButton,
-  .feedback .submitButton,
-  .feedback .disabledSubmitButton {
+  .disabledSubmitButton {
     width: 96px;
     height: 34px;
-    align-self: center;
     flex: 0 0 auto;
   }
 
