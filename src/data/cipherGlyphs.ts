@@ -7,22 +7,22 @@ import type {
 } from "@/lib/gameTypes";
 
 const CATEGORY_CODE_POINTS: Record<WordCategory, number> = {
-  color: 0x1e800,
-  quality: 0x1e801,
-  quantity: 0x1e802,
-  noun: 0x1e803,
-  verb: 0x1e804,
+  color: 0x1e802,
+  quality: 0x1e80A,
+  quantity: 0x1e80F,
+  noun: 0x1e813,
+  verb: 0x1e84D,
 };
 
 const WORD_CODE_POINTS: Record<CipherSlotIndex, number> = {
-  1: 0x1e805,
-  2: 0x1e806,
-  3: 0x1e807,
-  4: 0x1e808,
-  5: 0x1e809,
-  6: 0x1e80a,
-  7: 0x1e80b,
-  8: 0x1e80c,
+  1: 0x1e81F,
+  2: 0x1e8C2,
+  3: 0x1e830,
+  4: 0x1e834,
+  5: 0x1e83A,
+  6: 0x1e84F,
+  7: 0x1e860,
+  8: 0x1e861,
 };
 
 export function createGlyphText(
