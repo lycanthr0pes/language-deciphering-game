@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { displayFont, japaneseUiFont, mendeCipherFont } from "./fonts";
+import {
+  displayFont,
+  japaneseUiFont,
+  mendeCipherFont,
+  notoSerifFont,
+} from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +20,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${japaneseUiFont.variable} ${displayFont.variable} ${mendeCipherFont.variable} h-full antialiased`}
+      className={`${japaneseUiFont.variable} ${displayFont.variable} ${notoSerifFont.variable} ${mendeCipherFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

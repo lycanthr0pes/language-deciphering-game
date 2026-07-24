@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { CutsceneScreen } from "./CutsceneScreen";
 import { DialogueBox } from "./DialogueBox";
+import { DifficultyBadge } from "./DifficultyBadge";
 import { EndTitleScreen } from "./EndTitleScreen";
 import { MainMenu } from "./MainMenu";
 import { Notebook } from "./Notebook";
@@ -637,6 +638,13 @@ export function GameScreen() {
     (gamePhase === "answering" || gamePhase === "answerFeedback") &&
     currentQuestion !== null;
   const showGameStatus = showAnswerDialog && difficulty !== null;
+  const showDifficultyBadge =
+    difficulty !== null &&
+    (gamePhase === "introDialogue" ||
+      gamePhase === "exampleDialogue" ||
+      gamePhase === "question" ||
+      gamePhase === "answering" ||
+      gamePhase === "answerFeedback");
 
   if (fontStatus === "error" || openingAssetStatus === "error") {
     const message =
@@ -707,6 +715,9 @@ export function GameScreen() {
           />
         ) : (
           <>
+            {showDifficultyBadge && difficulty ? (
+              <DifficultyBadge difficulty={difficulty} />
+            ) : null}
             {showGameStatus ? (
               <div className={styles.statusCluster}>
                 {difficulty === "easy" ? (
