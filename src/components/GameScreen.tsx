@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChoiceList } from "./ChoiceList";
 import { CutsceneScreen } from "./CutsceneScreen";
 import { DialogueBox } from "./DialogueBox";
+import { DifficultyBadge } from "./DifficultyBadge";
 import { EndTitleScreen } from "./EndTitleScreen";
 import { MainMenu } from "./MainMenu";
 import { Notebook } from "./Notebook";
@@ -16,7 +17,7 @@ import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { assetPath } from "@/lib/assetPath";
 import { generateRound } from "@/lib/cipherGenerator";
-import { GAME_CONFIG } from "@/lib/gameConfig";
+import { DIFFICULTY_CONFIG, GAME_CONFIG } from "@/lib/gameConfig";
 import type {
   AnswerJudgement,
   AssetStatus,
@@ -123,11 +124,9 @@ export function GameScreen() {
   const [hasUnreadExamples, setHasUnreadExamples] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [mistakeCount, setMistakeCount] = useState(0);
-  const [mistakesRemaining, setMistakesRemaining] = useState<number>(
-    GAME_CONFIG.safeMistakeCount,
-  );
+  const [mistakesRemaining, setMistakesRemaining] = useState(0);
   const [difficultyLevel, setDifficultyLevel] = useState(1);
-  const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.timeLimitSeconds);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [endedAt, setEndedAt] = useState<number | null>(null);
   const [cutsceneStep, setCutsceneStep] = useState(0);
@@ -139,7 +138,10 @@ export function GameScreen() {
   const [pendingDifficulty, setPendingDifficulty] = useState<Difficulty | null>(
     null,
   );
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
 
+  const difficultyConfig =
+    difficulty === null ? null : DIFFICULTY_CONFIG[difficulty];
   const currentDialogue = dialogueLines[dialogueIndex] ?? null;
   const notebookSpreads = buildNotebookSpreads(
     examples,
@@ -156,7 +158,7 @@ export function GameScreen() {
   const canSubmitAnswer =
     gamePhase === "answering" &&
     !isNotebookOpen &&
-    timeLeft > 0 &&
+    (timeLeft === null || timeLeft > 0) &&
     allTokensAnswered;
 
   function startTerminalCutscene(
@@ -218,6 +220,7 @@ export function GameScreen() {
 
   function startRound(level: number) {
     const round = generateRound(level);
+    const config = difficulty ? DIFFICULTY_CONFIG[difficulty] : null;
     setDialogueLines(round.dialogueLines);
     setDialogueIndex(0);
     setCurrentQuestion(round.question);
@@ -228,8 +231,8 @@ export function GameScreen() {
     setClearedJudgementTokenIds(new Set());
     setFeedbackOutcome(null);
     setWrongShakeSequence(0);
-    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
-    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
+    setMistakesRemaining(config?.safeMistakeCount ?? 0);
+    setTimeLeft(config?.timeLimitSeconds ?? null);
     setGamePhase("exampleDialogue");
   }
 
@@ -295,7 +298,8 @@ export function GameScreen() {
   }, []);
 
   useEffect(() => {
-    if (gamePhase !== "answering" || timeLeft <= 0) return;
+    if (difficulty !== "hard" || gamePhase !== "answering") return;
+    if (timeLeft === null || timeLeft <= 0) return;
 
     const timerId = window.setTimeout(() => {
       const nextTimeLeft = Math.max(timeLeft - 1, 0);
@@ -307,7 +311,7 @@ export function GameScreen() {
     }, 1000);
 
     return () => window.clearTimeout(timerId);
-  }, [gamePhase, timeLeft]);
+  }, [difficulty, gamePhase, timeLeft]);
 
   useEffect(() => {
     function isEditableEventTarget(target: EventTarget | null) {
@@ -482,12 +486,24 @@ export function GameScreen() {
   }
 
   function handleSelectToken(tokenId: string) {
-    if (gamePhase !== "answering" || isNotebookOpen || timeLeft <= 0) return;
+    if (
+      gamePhase !== "answering" ||
+      isNotebookOpen ||
+      (timeLeft !== null && timeLeft <= 0)
+    ) {
+      return;
+    }
     setActiveTokenId(tokenId);
   }
 
   function handleSelectWord(tokenId: string, value: string) {
-    if (gamePhase !== "answering" || isNotebookOpen || timeLeft <= 0) return;
+    if (
+      gamePhase !== "answering" ||
+      isNotebookOpen ||
+      (timeLeft !== null && timeLeft <= 0)
+    ) {
+      return;
+    }
     if (selectedAnswers[tokenId] === value) return;
 
     setSelectedAnswers((previous) => ({
@@ -510,14 +526,14 @@ export function GameScreen() {
   }
 
   function handleSubmitAnswer() {
-    if (!currentQuestion || !canSubmitAnswer) return;
+    if (!currentQuestion || !canSubmitAnswer || !difficulty) return;
 
     const judgedAt = Date.now();
     const judgement = judgeAnswer(currentQuestion, selectedAnswers);
     setClearedJudgementTokenIds(new Set());
-    setAnswerJudgement(judgement);
 
     if (judgement.isCorrect) {
+      setAnswerJudgement(judgement);
       setGamePhase("answerFeedback");
       recordCorrectAnswer(currentQuestion, selectedAnswers);
       setCorrectCount((count) => count + 1);
@@ -534,11 +550,12 @@ export function GameScreen() {
     playSound("wrongAnswer");
     setMistakeCount((count) => count + 1);
 
-    if (mistakesRemaining <= 0) {
+    if (difficulty === "hard" || mistakesRemaining <= 0) {
       startTerminalCutscene("gameOver", judgedAt);
       return;
     }
 
+    setAnswerJudgement(judgement);
     setWrongShakeSequence((sequence) => sequence + 1);
     setMistakesRemaining((count) => Math.max(count - 1, 0));
     setFeedbackOutcome(null);
@@ -549,6 +566,7 @@ export function GameScreen() {
     setOpeningKey((key) => key + 1);
     setMenuView("root");
     setPendingDifficulty(null);
+    setDifficulty(null);
     setGamePhase("menu");
     setDialogueLines(INTRO_DIALOGUES);
     setDialogueIndex(0);
@@ -566,9 +584,9 @@ export function GameScreen() {
     setHasUnreadExamples(false);
     setCorrectCount(0);
     setMistakeCount(0);
-    setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
+    setMistakesRemaining(0);
     setDifficultyLevel(1);
-    setTimeLeft(GAME_CONFIG.timeLimitSeconds);
+    setTimeLeft(null);
     setStartedAt(Date.now());
     setEndedAt(null);
     setCutsceneStep(0);
@@ -579,7 +597,10 @@ export function GameScreen() {
   function handleMenuStart() {
     if (pendingDifficulty === null) return;
 
-    // FV007 stub: proceed into the existing opening flow without RunDefinition (FV011).
+    const config = DIFFICULTY_CONFIG[pendingDifficulty];
+    setDifficulty(pendingDifficulty);
+    setMistakesRemaining(config.safeMistakeCount);
+    setTimeLeft(config.timeLimitSeconds);
     setStartedAt(Date.now());
     setOpeningKey((key) => key + 1);
     setGamePhase("opening");
@@ -616,7 +637,14 @@ export function GameScreen() {
   const showAnswerDialog =
     (gamePhase === "answering" || gamePhase === "answerFeedback") &&
     currentQuestion !== null;
-  const showTimer = showAnswerDialog;
+  const showGameStatus = showAnswerDialog && difficulty !== null;
+  const showDifficultyBadge =
+    difficulty !== null &&
+    (gamePhase === "introDialogue" ||
+      gamePhase === "exampleDialogue" ||
+      gamePhase === "question" ||
+      gamePhase === "answering" ||
+      gamePhase === "answerFeedback");
 
   if (fontStatus === "error" || openingAssetStatus === "error") {
     const message =
@@ -687,13 +715,19 @@ export function GameScreen() {
           />
         ) : (
           <>
-            {showTimer ? (
+            {showDifficultyBadge && difficulty ? (
+              <DifficultyBadge difficulty={difficulty} />
+            ) : null}
+            {showGameStatus ? (
               <div className={styles.statusCluster}>
-                <TimerDisplay
-                  timeLeft={timeLeft}
-                  warningTime={GAME_CONFIG.warningTimeSeconds}
-                  mistakesRemaining={mistakesRemaining}
-                />
+                {difficulty === "easy" ? (
+                  <TimerDisplay mistakesRemaining={mistakesRemaining} />
+                ) : timeLeft !== null && difficultyConfig ? (
+                  <TimerDisplay
+                    timeLeft={timeLeft}
+                    warningTime={difficultyConfig.warningTimeSeconds}
+                  />
+                ) : null}
                 {gamePhase === "answering" && !isNotebookOpen ? (
                   <NotebookIndicator
                     showNew={hasUnreadExamples}

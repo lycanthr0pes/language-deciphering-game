@@ -1,0 +1,22 @@
+.badge {
+  position: absolute;
+  top: 2.963%;
+  left: 3.9583%;
+  z-index: 8;
+  margin: 0;
+  color: #ded8cb;
+  font-family: var(--font-noto-serif), "Noto Serif", serif;
+  font-size: clamp(18px, 1.875cqw, 36px);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+@container (max-width: 720px) or (max-height: 430px) {
+  .badge {
+    top: 2%;
+    left: 2%;
+  }
+}

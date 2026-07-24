@@ -1,4 +1,4 @@
-import { Inter, Noto_Sans_JP } from "next/font/google";
+import { Inter, Noto_Sans_JP, Noto_Serif } from "next/font/google";
 import localFont from "next/font/local";
 
 export const japaneseUiFont = Noto_Sans_JP({
@@ -13,6 +13,13 @@ export const displayFont = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display",
+});
+
+export const notoSerifFont = Noto_Serif({
+  weight: "600",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-noto-serif",
 });
 
 export const mendeCipherFont = localFont({
