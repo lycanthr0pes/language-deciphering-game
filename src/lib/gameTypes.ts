@@ -154,6 +154,9 @@ export type StageGenerationRule = {
 
 export type WordAssignments = Readonly<Record<CipherId, WordId>>;
 
+/** 例文・正答履歴で公開済みの暗号↔語対応（WordAssignments 全体ではない） */
+export type KnownMeanings = ReadonlyMap<CipherId, WordId>;
+
 export type StageWordContent = {
   level: number;
   examples: readonly (readonly WordId[])[];
