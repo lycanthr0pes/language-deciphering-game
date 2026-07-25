@@ -154,11 +154,16 @@ export type StageGenerationRule = {
 
 export type WordAssignments = Readonly<Record<CipherId, WordId>>;
 
-export type GeneratedStage = {
+export type StageWordContent = {
   level: number;
   examples: readonly (readonly WordId[])[];
   question: readonly WordId[];
   unknownWordIds: readonly WordId[];
+};
+
+export type FallbackStageDefinition = StageWordContent;
+
+export type GeneratedStage = StageWordContent & {
   choiceCount: 4 | 6 | 8 | 10;
   choiceCandidatesByTokenId: Readonly<Record<string, readonly string[]>>;
 };
