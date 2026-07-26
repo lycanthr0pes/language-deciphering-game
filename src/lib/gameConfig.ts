@@ -23,6 +23,7 @@ export const DIFFICULTY_CONFIG = {
 
 export const GAME_CONFIG = {
   finalLevel: 12,
+  runGenerationAttemptLimit: 20,
   examplesPerNotebookSpread: 6,
   answerFeedbackMs: 1400,
   wrongAnswerShakeMs: 320,
