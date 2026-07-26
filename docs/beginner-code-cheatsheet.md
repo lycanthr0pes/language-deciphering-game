@@ -701,7 +701,7 @@ const showAnswerDialog =
 {showAnswerDialog ? (
   <TimerDisplay
     timeLeft={timeLeft}
-    warningTime={GAME_CONFIG.warningTimeSeconds}
+    warningTime={DIFFICULTY_CONFIG.hard.warningTimeSeconds}
     mistakesRemaining={mistakesRemaining}
   />
 ) : null}
@@ -783,7 +783,7 @@ public/assets/sounds/dialogue-next.mp3
 - ゲーム進行のstateは基本的に`GameScreen`に置く。
 - 子コンポーネントは表示とクリック通知を担当する。
 - Figma node `13:66`の照明は`SceneCeilingLight`へまとめ、読込からリザルトまで同じ素材と配置を使う。各画面に照明用CSSを複製しない。
-- 開始まばたきは新規タブの初回とゲーム内リトライだけで再生し、同一タブのブラウザ再読込では`sessionStorage`とNavigation Timingを使って省略する。
+- 初回起動、ブラウザ再読込、開発時の再マウントではメインメニューに留める。開始まばたきは`sessionStorage`やNavigation Timingで分岐せず、難易度選択後に`START`を押すたびに再生する。
 - `ChoiceList`は正誤判定しない。
 - `DialogueBox`は通常会話・例文・問題単独提示を本文だけで描画し、右下に会話送りの`next→`または解答開始の`answer→`を表示する。`ChoiceList`は外側の透明な配置コンテナと、問題文・解答欄だけを収める内側パネルに分ける。候補、解答ボタン、案内、判定数は内側パネル外とし、候補は共通の大枠を持たない`#111`背景の独立ボタンにする。
 - 正誤判定は`解答する`ボタンを押した時だけ行う。

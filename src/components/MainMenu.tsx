@@ -44,7 +44,7 @@ export function MainMenu({
               alt="The Room"
               width={720}
               height={320}
-              priority
+              preload
               unoptimized
             />
           </div>
