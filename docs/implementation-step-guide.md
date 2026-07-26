@@ -31,12 +31,15 @@ src/
     NotoSansMendeKikakui-Regular.woff2
   components/
     GameScreen.tsx
+    MainMenu.tsx
     SceneCeilingLight.tsx
     DialogueBox.tsx
     ChoiceList.tsx
     CipherText.tsx
     Notebook.tsx
+    NotebookIndicator.tsx
     TimerDisplay.tsx
+    DifficultyBadge.tsx
     OpeningBlink.tsx
     CutsceneScreen.tsx
     EndTitleScreen.tsx
@@ -44,15 +47,23 @@ src/
   data/
     introDialogues.ts
     wordPools.ts
-    exampleTemplates.ts
     cipherGlyphs.ts
+    fallbackStages.ts
+    stageGenerationRules.ts
   lib/
     assetPath.ts
-    cipherGenerator.ts
+    choiceGenerator.ts
     gameConfig.ts
     gameTypes.ts
     judgeAnswer.ts
     loadCipherFont.ts
+    notebookSpreads.ts
+    questionToken.ts
+    random.ts
+    runGenerator.ts
+    runStage.ts
+    semanticValidation.ts
+    solutionValidator.ts
     sound.ts
   utils/
     formatTime.ts
@@ -88,7 +99,7 @@ public/
 
 ### 設定値
 
-- Lv8、誤答猶予1、90秒、警告15秒を`gameConfig.ts`へ置く。
+- Lv12、EASYの誤答猶予1、HARDの90秒と警告15秒を`gameConfig.ts`へ置く。難易度別の値は`DIFFICULTY_CONFIG`だけに定義し、`GAME_CONFIG`へ重複させない。
 - 手帳1見開き最大6件、NEW半周期900ms、判定1400ms、誤答時の揺れ320ms、開始2300ms、素材timeout 5000msを置く。
 - 発砲100ms、失敗タイトル2300ms、クリアタイトル2400ms、低減時1500msを置く。
 
@@ -140,16 +151,15 @@ public/
 
 ### 実装
 
-- 日本語語彙を`wordPools.ts`へ一度だけ定義する。
-- 内部カテゴリと候補番号から`cipherId`と`glyphText`を生成する。
-- `exampleTemplates.ts`へLv別の例文構成を定義する。
-- Lv1で3件、Lv2〜8で各1件、累計10件になるよう生成する。
-- Lv別問題は`game-rule.md`の内部確認用構成と一致させる。
-- ラウンド開始時に一度生成し、stateへ保存する。
+- 日本語語彙を`wordPools.ts`へ、暗号文字を`cipherGlyphs.ts`へ一度だけ定義する。
+- `stageGenerationRules.ts`へLv1〜12の文型、例文数、未知語数、候補数を定義し、固定フォールバックを`fallbackStages.ts`へ置く。
+- `runGenerator.ts`で分類内の暗号割当、例文と問題、候補、一意解検査をまとめた`RunDefinition`を`START`ごとに一度生成する。
+- `runStage.ts`で生成済みstageを表示用の会話、例文、問題へ変換し、ラウンド開始時にstateへ保存する。
 
 ### 完成条件
 
 - renderのたびに問題が変わらない。
+- 同じseedから同じ`RunDefinition`を再現でき、生成失敗時は固定フォールバックを使う。
 - 日本語正解、候補、暗号表示が同じトークン定義から作られる。
 - 画面に内部カテゴリIDが出ない。
 
@@ -289,7 +299,8 @@ public/
 
 ### 実装
 
-- Navigation Timingが`reload`の場合、または同一タブの`sessionStorage`に開始演出表示済みの印がある場合は、初期フェーズを`introDialogue`として再読込時の全面暗転を省く。ゲーム内リトライでは明示的に`opening`へ戻す。
+- 初期フェーズは常に`menu`とし、初回起動、ブラウザ再読込、開発時の再マウントでは素材読込後もメニューに留める。Navigation Timingと`sessionStorage`による分岐は設けない。
+- 難易度を選択して`START`を押し、`RunDefinition`の生成に成功した時だけ`startedAt`を保存して`opening`へ進める。
 - Figma node `13:66`の照明SVGと、画風統一済みの人物4差分、机・手帳・ペン、開いた見開き背景を`public/assets/images`へ配置し、部屋だけをCSSで補完する。照明は`SceneCeilingLight`へ集約し、全場面で共通利用する。人物は`masked-man-aim-self.png`の黒・えんじ色とローポリゴン面を基準にし、机上物まで同じ画風へ統一する。
 - 全画像パスを`assetPath()`で読み込み、読込完了後に`OpeningBlink`を表示する。
 - 上下まぶたと暗転をCSSで描く。
@@ -301,8 +312,8 @@ public/
 
 - まばたき画像を使わない。
 - 演出中に入力できない。
-- リトライ時も再生する。
-- 同一タブのブラウザ再読込ではまばたき暗転を再生せず、導入会話を表示する。
+- 初回起動・同一タブのブラウザ再読込・開発時の再マウントでは、自動で開始演出や導入会話へ進まない。
+- リザルトから難易度選択へ戻った場合を含め、`START`を押すたびに再生する。
 - 人物差分を切り替えても服色が跳ねず、机と人物の描線・面・陰影が同じ画風に見える。
 
 ## 16. Step 13: 発砲演出と終了タイトルを作る

@@ -23,9 +23,6 @@ export const DIFFICULTY_CONFIG = {
 
 export const GAME_CONFIG = {
   finalLevel: 12,
-  safeMistakeCount: 1,
-  timeLimitSeconds: 90,
-  warningTimeSeconds: 15,
   examplesPerNotebookSpread: 6,
   answerFeedbackMs: 1400,
   wrongAnswerShakeMs: 320,

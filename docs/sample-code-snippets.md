@@ -91,11 +91,21 @@ const SCENE_ASSETS = {
   notebookOpenSpread: "/assets/images/notebook-open-spread.png",
 } as const;
 
+export const DIFFICULTY_CONFIG = {
+  easy: {
+    timeLimitSeconds: null,
+    warningTimeSeconds: null,
+    safeMistakeCount: 1,
+  },
+  hard: {
+    timeLimitSeconds: 90,
+    warningTimeSeconds: 15,
+    safeMistakeCount: 0,
+  },
+} as const;
+
 export const GAME_CONFIG = {
-  finalLevel: 8,
-  safeMistakeCount: 1,
-  timeLimitSeconds: 90,
-  warningTimeSeconds: 15,
+  finalLevel: 12,
   examplesPerNotebookSpread: 6,
   newAnimationHalfCycleMs: 900,
   answerFeedbackMs: 1400,
@@ -604,7 +614,7 @@ const showAnswerDialog =
 {showAnswerDialog ? (
   <TimerDisplay
     timeLeft={timeLeft}
-    warningTime={GAME_CONFIG.warningTimeSeconds}
+    warningTime={DIFFICULTY_CONFIG.hard.warningTimeSeconds}
     mistakesRemaining={mistakesRemaining}
   />
 ) : null}

@@ -35,12 +35,15 @@ src/
       NotoSansMendeKikakui-Regular.woff2
   components/
     GameScreen.tsx
+    MainMenu.tsx
     SceneCeilingLight.tsx
     DialogueBox.tsx
     ChoiceList.tsx
     CipherText.tsx
     Notebook.tsx
+    NotebookIndicator.tsx
     TimerDisplay.tsx
+    DifficultyBadge.tsx
     OpeningBlink.tsx
     CutsceneScreen.tsx
     EndTitleScreen.tsx
@@ -49,16 +52,24 @@ src/
   data/
     introDialogues.ts
     wordPools.ts
-    exampleTemplates.ts
     cipherGlyphs.ts
+    fallbackStages.ts
+    stageGenerationRules.ts
   lib/
     assetPath.ts
-    cipherGenerator.ts
+    choiceGenerator.ts
     gameConfig.ts
     gameTypes.ts
     judgeAnswer.ts
     loadCipherFont.ts
     loadOpeningAssets.ts
+    notebookSpreads.ts
+    questionToken.ts
+    random.ts
+    runGenerator.ts
+    runStage.ts
+    semanticValidation.ts
+    solutionValidator.ts
     sound.ts
   utils/
     formatTime.ts
@@ -104,6 +115,7 @@ export type DialogueLine = {
 };
 
 export type GamePhase =
+  | "menu"
   | "opening"
   | "introDialogue"
   | "exampleDialogue"
@@ -199,11 +211,21 @@ const SCENE_ASSETS = {
   notebookOpenSpread: "/assets/images/notebook-open-spread.png",
 } as const;
 
+export const DIFFICULTY_CONFIG = {
+  easy: {
+    timeLimitSeconds: null,
+    warningTimeSeconds: null,
+    safeMistakeCount: 1,
+  },
+  hard: {
+    timeLimitSeconds: 90,
+    warningTimeSeconds: 15,
+    safeMistakeCount: 0,
+  },
+} as const;
+
 export const GAME_CONFIG = {
-  finalLevel: 8,
-  safeMistakeCount: 1,
-  timeLimitSeconds: 90,
-  warningTimeSeconds: 15,
+  finalLevel: 12,
   examplesPerNotebookSpread: 6,
   newAnimationHalfCycleMs: 900,
   answerFeedbackMs: 1400,
@@ -308,7 +330,7 @@ export type ResultScreenProps = {
 ## 8. GameScreenのstate
 
 ```ts
-const [gamePhase, setGamePhase] = useState<GamePhase>("opening");
+const [gamePhase, setGamePhase] = useState<GamePhase>("menu");
 const [dialogueLines, setDialogueLines] = useState<DialogueLine[]>([]);
 const [dialogueIndex, setDialogueIndex] = useState(0);
 const [currentLevel, setCurrentLevel] = useState(1);
@@ -322,8 +344,8 @@ const [clearedJudgementTokenIds, setClearedJudgementTokenIds] = useState<Readonl
 const [wrongShakeSequence, setWrongShakeSequence] = useState(0);
 const [correctCount, setCorrectCount] = useState(0);
 const [mistakeCount, setMistakeCount] = useState(0);
-const [mistakesRemaining, setMistakesRemaining] = useState(1);
-const [timeLeft, setTimeLeft] = useState(GAME_CONFIG.timeLimitSeconds);
+const [mistakesRemaining, setMistakesRemaining] = useState(0);
+const [timeLeft, setTimeLeft] = useState<number | null>(null);
 const [isNotebookOpen, setIsNotebookOpen] = useState(false);
 const [notebookPage, setNotebookPage] = useState(0);
 const [hasUnreadExamples, setHasUnreadExamples] = useState(false);
@@ -340,15 +362,18 @@ const terminalTransitionStartedRef = useRef(false);
 
 ## 9. 初期化
 
-`resetGame()`は全stateを初期値へ戻し、開始時刻を保存して`opening`へ進む。
+`resetGame()`は実行中のゲームstateと選択済み難易度を初期化し、難易度選択を表示した`menu`へ戻す。この時点では開始時刻を保存せず、開始演出も再生しない。`handleMenuStart()`は選択済み難易度の設定を読み、`RunDefinition`生成成功後にゲームstateを初期化して開始時刻を保存し、`opening`へ進む。
 
 ```ts
 function resetGame() {
   terminalTransitionStartedRef.current = false;
-  setGamePhase("opening");
-  setDialogueLines([]);
+  setGamePhase("menu");
+  setMenuView("difficulty");
+  setPendingDifficulty(null);
+  setDifficulty(null);
+  setRunDefinition(null);
+  setDialogueLines(INTRO_DIALOGUES);
   setDialogueIndex(0);
-  setCurrentLevel(1);
   setCurrentQuestion(null);
   setExamples([]);
   setSelectedAnswers({});
@@ -356,15 +381,27 @@ function resetGame() {
   setAnswerJudgement(null);
   setCorrectCount(0);
   setMistakeCount(0);
-  setMistakesRemaining(GAME_CONFIG.safeMistakeCount);
-  setTimeLeft(GAME_CONFIG.timeLimitSeconds);
+  setMistakesRemaining(0);
+  setTimeLeft(null);
   setIsNotebookOpen(false);
   setNotebookPage(0);
   setHasUnreadExamples(false);
   setCutsceneStep(0);
   setResultStatus(null);
-  setStartedAt(Date.now());
   setEndedAt(null);
+}
+
+function handleMenuStart() {
+  if (pendingDifficulty === null) return;
+
+  const config = DIFFICULTY_CONFIG[pendingDifficulty];
+  const nextRunDefinition = createRunDefinition();
+  setRunDefinition(nextRunDefinition);
+  setDifficulty(pendingDifficulty);
+  setMistakesRemaining(config.safeMistakeCount);
+  setTimeLeft(config.timeLimitSeconds);
+  setStartedAt(Date.now());
+  setGamePhase("opening");
 }
 ```
 
@@ -571,7 +608,8 @@ function closeNotebook() {
 
 ## 18. 開始演出
 
-- 初期`GamePhase`はNavigation Timingと`sessionStorage`から決定する。新規タブの初回だけ`opening`、同一タブのブラウザ再読込または開始演出を表示済みの再マウントでは`introDialogue`とし、素材読込後に全面暗転を再マウントしない。ゲーム内の`resetGame()`は明示的に`opening`へ戻す。
+- 初期`GamePhase`は常に`menu`とする。初回起動、ブラウザ再読込、開発時の再マウントでは素材読込後もメニューに留まり、自動で開始演出や導入会話へ進まない。Navigation Timingと`sessionStorage`による開始演出判定は行わない。
+- メニュー表示中は開始演出を再生しない。難易度を選択して`START`を押し、`RunDefinition`の生成に成功した時だけ`startedAt`を保存して`opening`へ進む。リザルトから難易度選択へ戻った後も、次の`START`で開始演出を再生する。
 - 画風統一済みの人物4差分、机・手帳・ペン、開いた見開き背景と、node `13:66`由来の照明SVGを画像で表示し、部屋だけCSSで補完する。照明SVGは粒状フィルターを適用せず、形状と縦グラデーションを維持する。照明は`SceneCeilingLight`を使い、1920×1080基準のnode枠`x=612, y=-112.5, w=696, h=1020`と、枠内の左右7.4%・上1.78%・下25%インセットを使う。画像は`object-fit: fill`で枠に合わせる。
 - 人物画像はFigmaの横位置とサイズを維持し、縦位置だけを基準より28px上げる。1920×1080では通常人物を`x=636, y=0, w=648, h=648`、発砲時の3差分を`x=600, y=-48, w=720, h=720`へ配置する。
 - 対象パスを`assetPath()`で解決し、すべての読込完了後に`OpeningBlink`をマウントする。
@@ -661,6 +699,6 @@ const elapsedSeconds =
 - 1回目と2回目の誤答、時間切れ即終了が正しく分岐する。
 - 手帳表示中もタイマーが進み、0秒で手帳を閉じて失敗演出へ進む。
 - 開始演出、両発砲演出、両終了タイトル、リザルト、リトライが1回ずつ遷移する。
-- 同一タブのブラウザ再読込では開始暗転を省略し、ゲーム内リトライでは開始演出を再生する。
+- 初回起動・同一タブのブラウザ再読込・開発時の再マウントではメニューに留まり、リザルトから戻った場合を含めて`START`を押すたびに開始演出を再生する。
 - モーション低減、フォント・素材エラー、`basePath`付き配信で成立する。
 - listener、timeout、音声が多重登録・多重再生されない。

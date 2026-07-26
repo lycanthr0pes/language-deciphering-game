@@ -41,14 +41,6 @@ import styles from "./GameScreen.module.css";
 
 type FeedbackOutcome = "nextRound" | "clear";
 
-const OPENING_PLAYED_SESSION_KEY =
-  "language-deciphering-game:opening-played";
-
-function getInitialGamePhase(): GamePhase {
-  // FV007 stub: show main menu after assets load. Full reload/menu rules are FV011.
-  return "menu";
-}
-
 function getPrefersReducedMotion() {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -102,8 +94,7 @@ export function GameScreen() {
   const [dialogueLines, setDialogueLines] =
     useState<DialogueLine[]>(INTRO_DIALOGUES);
   const [dialogueIndex, setDialogueIndex] = useState(0);
-  const [gamePhase, setGamePhase] =
-    useState<GamePhase>(getInitialGamePhase);
+  const [gamePhase, setGamePhase] = useState<GamePhase>("menu");
   const [openingKey, setOpeningKey] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -255,16 +246,6 @@ export function GameScreen() {
   useEffect(() => {
     preloadSounds();
   }, []);
-
-  useEffect(() => {
-    if (gamePhase !== "opening") return;
-
-    try {
-      window.sessionStorage.setItem(OPENING_PLAYED_SESSION_KEY, "true");
-    } catch {
-      // Storage restrictions must not prevent the game from starting.
-    }
-  }, [gamePhase]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
