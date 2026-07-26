@@ -22,7 +22,7 @@ export const DIFFICULTY_CONFIG = {
 } as const;
 
 export const GAME_CONFIG = {
-  finalLevel: 8,
+  finalLevel: 12,
   safeMistakeCount: 1,
   timeLimitSeconds: 90,
   warningTimeSeconds: 15,

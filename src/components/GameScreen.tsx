@@ -16,7 +16,6 @@ import { SceneCeilingLight } from "./SceneCeilingLight";
 import { TimerDisplay } from "./TimerDisplay";
 import { INTRO_DIALOGUES } from "@/data/introDialogues";
 import { assetPath } from "@/lib/assetPath";
-import { generateRound } from "@/lib/cipherGenerator";
 import { DIFFICULTY_CONFIG, GAME_CONFIG } from "@/lib/gameConfig";
 import type {
   AnswerJudgement,
@@ -29,11 +28,14 @@ import type {
   MenuView,
   Question,
   ResultStatus,
+  RunDefinition,
 } from "@/lib/gameTypes";
 import { judgeAnswer } from "@/lib/judgeAnswer";
 import { loadMendeCipherFont } from "@/lib/loadCipherFont";
 import { loadOpeningAssets } from "@/lib/loadOpeningAssets";
 import { buildNotebookSpreads } from "@/lib/notebookSpreads";
+import { createRunDefinition } from "@/lib/runGenerator";
+import { adaptStage } from "@/lib/runStage";
 import { playSound, preloadSounds } from "@/lib/sound";
 import styles from "./GameScreen.module.css";
 
@@ -139,6 +141,9 @@ export function GameScreen() {
     null,
   );
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const [runDefinition, setRunDefinition] = useState<RunDefinition | null>(
+    null,
+  );
 
   const difficultyConfig =
     difficulty === null ? null : DIFFICULTY_CONFIG[difficulty];
@@ -219,7 +224,18 @@ export function GameScreen() {
   }
 
   function startRound(level: number) {
-    const round = generateRound(level);
+    if (runDefinition === null) {
+      setGamePhase("menu");
+      return;
+    }
+
+    const stage = runDefinition.stages[level - 1];
+    if (!stage) {
+      setGamePhase("menu");
+      return;
+    }
+
+    const round = adaptStage(stage, runDefinition.wordAssignments);
     const config = difficulty ? DIFFICULTY_CONFIG[difficulty] : null;
     setDialogueLines(round.dialogueLines);
     setDialogueIndex(0);
@@ -567,6 +583,7 @@ export function GameScreen() {
     setMenuView("difficulty");
     setPendingDifficulty(null);
     setDifficulty(null);
+    setRunDefinition(null);
     setGamePhase("menu");
     setDialogueLines(INTRO_DIALOGUES);
     setDialogueIndex(0);
@@ -598,7 +615,14 @@ export function GameScreen() {
     if (pendingDifficulty === null) return;
 
     const config = DIFFICULTY_CONFIG[pendingDifficulty];
+    const nextRunDefinition = createRunDefinition();
+    setRunDefinition(nextRunDefinition);
     setDifficulty(pendingDifficulty);
+    setDifficultyLevel(1);
+    setExamples([]);
+    setCorrectCount(0);
+    setMistakeCount(0);
+    setEndedAt(null);
     setMistakesRemaining(config.safeMistakeCount);
     setTimeLeft(config.timeLimitSeconds);
     setStartedAt(Date.now());
