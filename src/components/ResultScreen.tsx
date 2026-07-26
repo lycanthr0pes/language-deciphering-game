@@ -1,7 +1,4 @@
-"use client";
-
 import { SceneCeilingLight } from "./SceneCeilingLight";
-import { playButtonPressSound } from "@/lib/sound";
 import { formatTime } from "@/utils/formatTime";
 import styles from "./ResultScreen.module.css";
 
@@ -9,14 +6,12 @@ type ResultScreenProps = {
   clearTimeSeconds: number;
   correctCount: number;
   mistakeCount: number;
-  onReturnToDifficulty: () => void;
 };
 
 export function ResultScreen({
   clearTimeSeconds,
   correctCount,
   mistakeCount,
-  onReturnToDifficulty,
 }: ResultScreenProps) {
   return (
     <div className={styles.root}>
@@ -37,17 +32,7 @@ export function ResultScreen({
             <dd>{mistakeCount}</dd>
           </div>
         </dl>
-        <button
-          type="button"
-          className={styles.returnButton}
-          onClick={(event) => {
-            event.stopPropagation();
-            playButtonPressSound();
-            onReturnToDifficulty();
-          }}
-        >
-          難易度選択へ
-        </button>
+        <p className={styles.instruction}>左クリックで難易度選択へ</p>
       </section>
     </div>
   );

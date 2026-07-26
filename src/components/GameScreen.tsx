@@ -632,13 +632,11 @@ export function GameScreen() {
   }
 
   const instruction =
-    gamePhase === "answerFeedback"
-      ? "判定結果を表示中"
-      : gamePhase === "answering"
-        ? "Spaceで手帳を開く"
-        : gamePhase === "question"
-          ? "左クリックで解答を開始"
-          : "左クリックで進む";
+    gamePhase === "answering"
+      ? "Spaceで手帳を開く"
+      : gamePhase === "question"
+        ? "左クリックで解答を開始"
+        : "左クリックで進む";
   const showAnswerDialog =
     (gamePhase === "answering" || gamePhase === "answerFeedback") &&
     currentQuestion !== null;
@@ -717,7 +715,6 @@ export function GameScreen() {
             clearTimeSeconds={clearTimeSeconds}
             correctCount={correctCount}
             mistakeCount={mistakeCount}
-            onReturnToDifficulty={resetGame}
           />
         ) : (
           <>
@@ -757,9 +754,7 @@ export function GameScreen() {
                 choices={getActiveChoices()}
                 selectedAnswers={selectedAnswers}
                 activeTokenId={activeTokenId}
-                instruction={
-                  gamePhase === "answerFeedback" ? instruction : ""
-                }
+                instruction={gamePhase === "answering" ? instruction : ""}
                 canSubmit={canSubmitAnswer}
                 disabled={gamePhase === "answerFeedback"}
                 judgement={answerJudgement}

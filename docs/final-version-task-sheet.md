@@ -1,17 +1,17 @@
 # 完成版タスク管理用スプレッドシート設計
 
-最終更新: 2026-07-21
-ステータス: 完成版仕様案・PM承認待ち
+最終更新: 2026-07-27
+ステータス: 完成版仕様承認済み・実装進行中
 
 ## 1. この文書の扱い
 
 この文書は、完成版実装の担当、依存関係、確認状況をGoogleスプレッドシートで管理するための入力データである。プロダクト仕様の正本ではない。
 
-- 完成版仕様案: `final-version-spec-and-roles.md`
+- 完成版仕様: `final-version-spec-and-roles.md`
 - 完成版サンプル: `final-version-sample-code.md`
 - 現行仕様: `game-rule.md`、`mende-kikakui-font-guide.md`、`ui-spec.md`、`implementation-spec.md`、`project-flow.md`
 
-カテゴリ名、列名、入力候補の正本は`プロCタスク管理シート.xlsx`とする。FV001を`PM確認待ち`、後続タスクを`未着手`とし、FV001が`完了`するまでは完成版コードの実装を開始しない。
+カテゴリ名、列名、入力候補の正本は`プロCタスク管理シート.xlsx`とする。FV001は2026-07-27にPM承認済みであり、依存する完成版実装タスクへ着手できる。
 
 ## 2. スプレッドシートの列
 
@@ -43,7 +43,7 @@
 
 ```tsv
 タスクID	カテゴリ	タスク名	担当者	補助担当	優先度	ステータス	成果物	関連ファイル	依存タスク	PM確認	メモ	PR/URL
-FV001	全体	完成版仕様3文書を承認する	@ly	@ささかまぼこ。, @かまぼこ(本物), @ほっそー	高	PM確認待ち	承認コメント	docs/final-version-spec-and-roles.md, docs/final-version-task-sheet.md, docs/final-version-sample-code.md		未確認	3文書の固定13字・24語、ランダム割当・出題、難易度、担当が一致することを確認する	-
+FV001	全体	完成版仕様3文書を承認する	@ly	@ささかまぼこ。, @かまぼこ(本物), @ほっそー	高	完了	2026-07-27 PM承認	docs/final-version-spec-and-roles.md, docs/final-version-task-sheet.md, docs/final-version-sample-code.md		承認	固定13字・24語、ランダム割当・出題、難易度、担当を確認して承認済み	-
 FV002	実装	固定13字・24語をCipherIdとWordIdへ分離する	@ほっそー	@ささかまぼこ。	高	未着手	gameTypes / wordPools / cipherGlyphs	src/lib/gameTypes.ts, src/data/wordPools.ts, src/data/cipherGlyphs.ts	FV001	未確認	fc-query、固定24暗号枠、固定24語、分類一致を確認する	-
 FV003	実装	名詞種別と意味相性判定を実装する	@ほっそー	@かまぼこ(本物)	高	未着手	semantic validationの純粋関数	src/lib/semanticValidation.ts, src/data/wordPools.ts	FV002	未確認	OK例とNG例を仕様表どおり判定する	-
 FV004	実装	分類内暗号割当とLv1〜Lv12の例文・問題生成を実装する	@ほっそー	@かまぼこ(本物)	高	未着手	RunDefinition生成・固定フォールバック	src/lib/runGenerator.ts, src/data/stageGenerationRules.ts, src/data/fallbackStages.ts	FV002,FV003	未確認	seed再現、21例文、12問題、未提示語予約、全24語公開、意味成立を照合する	-
