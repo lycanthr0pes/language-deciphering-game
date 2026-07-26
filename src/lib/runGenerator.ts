@@ -28,6 +28,12 @@ import {
   isSemanticallyValid,
   matchesSentencePattern,
 } from "@/lib/semanticValidation";
+import { createStableChoiceMap } from "@/lib/choiceGenerator";
+import {
+  buildKnownMeaningsAfterExamples,
+  buildQuestionTokens,
+  cipherIdForWordId,
+} from "@/lib/questionToken";
 
 export type GenerateStagesParams = {
   rules: readonly StageGenerationRule[];
@@ -76,18 +82,6 @@ export function createWordAssignments(random: RandomSource): WordAssignments {
   });
 
   return Object.fromEntries(pairs) as WordAssignments;
-}
-
-function cipherIdForWordId(
-  wordId: WordId,
-  assignments: WordAssignments,
-): CipherId {
-  for (const [cipherId, assignedWordId] of Object.entries(assignments)) {
-    if (assignedWordId === wordId) {
-      return cipherId as CipherId;
-    }
-  }
-  throw new Error(`No cipher assigned to word: ${wordId}`);
 }
 
 function wordIdsToEntries(wordIds: readonly WordId[]): WordEntry[] {
@@ -174,14 +168,34 @@ function pickRandomSentence(
   return null;
 }
 
-function toGeneratedStage(
+function finalizeStage(
   content: StageWordContent,
   rule: StageGenerationRule,
+  knownMeaningsBeforeLevel: ReadonlyMap<CipherId, WordId>,
+  params: GenerateStagesParams,
 ): GeneratedStage {
+  const knownAfterExamples = buildKnownMeaningsAfterExamples(
+    knownMeaningsBeforeLevel,
+    content.examples,
+    params.wordAssignments,
+  );
+  const tokens = buildQuestionTokens(
+    content.level,
+    content.question,
+    params.wordAssignments,
+  );
+  const choiceCandidatesByTokenId = createStableChoiceMap(
+    rule,
+    tokens,
+    knownAfterExamples,
+    params.runSeed,
+    params.random,
+  );
+
   return {
     ...content,
     choiceCount: rule.choiceCount,
-    choiceCandidatesByTokenId: {},
+    choiceCandidatesByTokenId,
   };
 }
 
@@ -384,7 +398,7 @@ function attemptRandomStages(params: GenerateStagesParams): GeneratedStage[] | n
       return null;
     }
 
-    const stage = toGeneratedStage(content, rule);
+    const stage = finalizeStage(content, rule, knownMeanings, params);
     stages.push(stage);
     commitStage(stage, wordAssignments, knownMeanings, usedSentenceKeys);
   }
@@ -428,7 +442,7 @@ function generateFallbackStages(params: GenerateStagesParams): GeneratedStage[] 
       throw new Error(`Stage ${rule.level} has no safe fallback`);
     }
 
-    const stage = toGeneratedStage(content, rule);
+    const stage = finalizeStage(content, rule, knownMeanings, params);
     stages.push(stage);
     commitStage(stage, wordAssignments, knownMeanings, usedSentenceKeys);
   }
