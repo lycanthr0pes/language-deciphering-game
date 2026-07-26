@@ -153,13 +153,13 @@ public/
 
 - 日本語語彙を`wordPools.ts`へ、暗号文字を`cipherGlyphs.ts`へ一度だけ定義する。
 - `stageGenerationRules.ts`へLv1〜12の文型、例文数、未知語数、候補数を定義し、固定フォールバックを`fallbackStages.ts`へ置く。
-- `runGenerator.ts`で分類内の暗号割当、例文と問題、候補、一意解検査をまとめた`RunDefinition`を`START`ごとに一度生成する。
+- `runGenerator.ts`で分類内の暗号割当、例文と問題、候補、一意解検査をまとめた`RunDefinition`を`START`ごとに一度生成する。ランダム生成に失敗した場合は派生seedで暗号割当から最大20回まで全体を再生成し、すべて失敗した時だけ固定フォールバックを使う。
 - `runStage.ts`で生成済みstageを表示用の会話、例文、問題へ変換し、ラウンド開始時にstateへ保存する。
 
 ### 完成条件
 
 - renderのたびに問題が変わらない。
-- 同じseedから同じ`RunDefinition`を再現でき、生成失敗時は固定フォールバックを使う。
+- 同じseedから同じ`RunDefinition`と成功試行を再現でき、20回の全体生成がすべて失敗した時だけ固定フォールバックを使う。
 - 日本語正解、候補、暗号表示が同じトークン定義から作られる。
 - 画面に内部カテゴリIDが出ない。
 

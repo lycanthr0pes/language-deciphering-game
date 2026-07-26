@@ -364,6 +364,8 @@ const terminalTransitionStartedRef = useRef(false);
 
 `resetGame()`は実行中のゲームstateと選択済み難易度を初期化し、難易度選択を表示した`menu`へ戻す。この時点では開始時刻を保存せず、開始演出も再生しない。`handleMenuStart()`は選択済み難易度の設定を読み、`RunDefinition`生成成功後にゲームstateを初期化して開始時刻を保存し、`opening`へ進む。
 
+`createRunDefinition()`は、最初に指定されたrun seedで暗号割当、Lv1〜Lv12、候補をまとめて生成する。生成に失敗した場合はrun seedから決定的に作った派生seedで全体を破棄して再生成し、合計20回すべて失敗した時だけ最後の暗号割当に対して固定フォールバックを生成する。返却する`runSeed`は元のseedを維持し、同じseedから同じ成功試行と`RunDefinition`を再現できるようにする。
+
 ```ts
 function resetGame() {
   terminalTransitionStartedRef.current = false;

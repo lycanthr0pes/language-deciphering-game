@@ -5,6 +5,7 @@ import {
   WORDS_BY_CATEGORY,
   WORD_BY_ID,
 } from "@/data/wordPools";
+import { GAME_CONFIG } from "@/lib/gameConfig";
 import type {
   CipherId,
   FallbackStageDefinition,
@@ -460,20 +461,53 @@ export function generateStages(params: GenerateStagesParams): GeneratedStage[] {
   return attemptRandomStages(params) ?? generateFallbackStages(params);
 }
 
-export function createRunDefinition(runSeed = createRunSeed()): RunDefinition {
-  const random = createSeededRandom(runSeed);
+function createRunGenerationParams(
+  runSeed: string,
+  attemptIndex: number,
+): GenerateStagesParams {
+  const attemptSeed =
+    attemptIndex === 0 ? runSeed : `${runSeed}:retry:${attemptIndex}`;
+  const random = createSeededRandom(attemptSeed);
   const wordAssignments = createWordAssignments(random);
-  const stages = generateStages({
+
+  return {
     rules: STAGE_RULES,
     fallbackStages: FALLBACK_STAGES,
     wordAssignments,
     random,
-    runSeed,
-  });
+    runSeed: attemptSeed,
+  };
+}
+
+export function createRunDefinition(runSeed = createRunSeed()): RunDefinition {
+  let fallbackParams: GenerateStagesParams | null = null;
+
+  for (
+    let attemptIndex = 0;
+    attemptIndex < GAME_CONFIG.runGenerationAttemptLimit;
+    attemptIndex += 1
+  ) {
+    const params = createRunGenerationParams(runSeed, attemptIndex);
+    const stages = attemptRandomStages(params);
+
+    if (stages) {
+      return {
+        runSeed,
+        wordAssignments: params.wordAssignments,
+        stages,
+      };
+    }
+
+    fallbackParams = params;
+  }
+
+  if (!fallbackParams) {
+    throw new Error("Run generation requires at least one attempt");
+  }
 
   return {
     runSeed,
-    wordAssignments,
-    stages,
+    wordAssignments: fallbackParams.wordAssignments,
+    stages: generateFallbackStages(fallbackParams),
   };
 }
