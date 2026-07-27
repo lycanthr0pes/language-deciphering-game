@@ -99,7 +99,7 @@ public/
 
 ### 設定値
 
-- Lv12、EASYの誤答猶予1、HARDの90秒と警告15秒を`gameConfig.ts`へ置く。難易度別の値は`DIFFICULTY_CONFIG`だけに定義し、`GAME_CONFIG`へ重複させない。
+- Lv12、EASYの誤答猶予1、HARDの120秒と警告15秒を`gameConfig.ts`へ置く。難易度別の値は`DIFFICULTY_CONFIG`だけに定義し、`GAME_CONFIG`へ重複させない。
 - 手帳1見開き最大6件、NEW半周期900ms、判定1400ms、誤答時の揺れ320ms、開始2300ms、素材timeout 5000msを置く。
 - 発砲100ms、失敗タイトル2300ms、クリアタイトル2400ms、低減時1500msを置く。
 

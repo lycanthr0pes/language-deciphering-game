@@ -218,7 +218,7 @@ export const DIFFICULTY_CONFIG = {
     safeMistakeCount: 1,
   },
   hard: {
-    timeLimitSeconds: 90,
+    timeLimitSeconds: 120,
     warningTimeSeconds: 15,
     safeMistakeCount: 0,
   },
@@ -244,7 +244,7 @@ export const GAME_CONFIG = {
 } as const;
 ```
 
-- 90秒と15秒は変更可能な既定値とする。
+- 120秒と15秒は変更可能な既定値とする。
 - アニメーション時間をCSSへ重複記述せず、CSSカスタムプロパティで渡す。
 - 正式な進行完了は`animationend`で通知し、設定値はフォールバックタイマーにも使う。
 
@@ -487,7 +487,7 @@ export function CipherText({
 1. レベル定義から新しい例文と問題を生成する。
 2. 追加例文を未提示のラウンドデータとして保持する。
 3. 問題、解答state、判定stateを初期化する。
-4. `mistakesRemaining`を1、時間を90秒へ戻す。
+4. `mistakesRemaining`を1、時間を120秒へ戻す。
 5. 追加例文の会話行を設定し、`exampleDialogue`へ進む。
 
 例文会話中は現在レベルの例文を`roundExamples`へ保持し、手帳履歴にはまだ追加しない。例文会話終了後に問題会話を表示する。問題行を左クリックして`answering`へ入る瞬間に、`roundExamples`をIDで重複排除して履歴へ一括追加し、追加がある場合だけ`hasUnreadExamples`を`true`にして書き留め音を1回鳴らす。

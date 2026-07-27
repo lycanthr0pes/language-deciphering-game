@@ -12,7 +12,7 @@ const GUIDE_LINES = [
   "解答受付中は Space で手帳を開閉できます。",
   "手帳表示中は A / D でページを移動できます。",
   "EASY は制限時間なしで、1回まで誤答しても続けられます。",
-  "HARD は1問90秒の制限があり、1回の誤答でゲームオーバーになります。",
+  "HARD は1問120秒の制限があり、1回の誤答でゲームオーバーになります。",
 ] as const;
 
 function playMenuButtonSound() {
@@ -142,7 +142,7 @@ export function MainMenu({
             >
               <span className={styles.difficultyName}>HARD</span>
               <span className={styles.difficultyHint}>
-                1問90秒 / 誤答1回でゲームオーバー
+                1問120秒 / 誤答1回でゲームオーバー
               </span>
             </button>
           </div>

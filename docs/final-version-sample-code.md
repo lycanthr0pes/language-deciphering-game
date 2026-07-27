@@ -112,7 +112,7 @@ export const DIFFICULTY_CONFIG = {
     safeMistakeCount: 1,
   },
   hard: {
-    timeLimitSeconds: 90,
+    timeLimitSeconds: 120,
     warningTimeSeconds: 15,
     safeMistakeCount: 0,
   },
@@ -668,7 +668,7 @@ function prepareStage(selectedDifficulty: Difficulty) {
 }
 ```
 
-`timeLeft`は`number | null`へ変更する。EASYで仮の90秒を保持しない。
+`timeLeft`は`number | null`へ変更する。EASYで仮の120秒を保持しない。
 
 ### 誤答分岐
 
