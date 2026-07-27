@@ -15,7 +15,7 @@ export const DIFFICULTY_CONFIG = {
     safeMistakeCount: 1,
   },
   hard: {
-    timeLimitSeconds: 90,
+    timeLimitSeconds: 120,
     warningTimeSeconds: 15,
     safeMistakeCount: 0,
   },

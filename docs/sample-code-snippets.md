@@ -98,7 +98,7 @@ export const DIFFICULTY_CONFIG = {
     safeMistakeCount: 1,
   },
   hard: {
-    timeLimitSeconds: 90,
+    timeLimitSeconds: 120,
     warningTimeSeconds: 15,
     safeMistakeCount: 0,
   },
@@ -124,7 +124,7 @@ export const GAME_CONFIG = {
 } as const;
 ```
 
-90秒と15秒は変更可能な既定値。他の承認値もここからCSSカスタムプロパティへ渡し、重複定義しない。
+120秒と15秒は変更可能な既定値。他の承認値もここからCSSカスタムプロパティへ渡し、重複定義しない。
 
 照明はFigma node `13:66`から書き出した`scene-ceiling-light.svg`を`SceneCeilingLight`で一度だけ実装し、読込、開始、通常進行、手帳、発砲、終了タイトル、リザルトから共通利用する。1920×1080基準のnode枠は`x=612, y=-112.5, w=696, h=1020`、画像は枠内の左右7.4%・上1.78%・下25%インセットとし、各画面へ照明CSSを複製しない。
 
