@@ -15,6 +15,13 @@ const GUIDE_LINES = [
   "HARD は1問120秒の制限があり、1回の誤答でゲームオーバーになります。",
 ] as const;
 
+const CREDIT_MEMBERS = [
+  "2520061 三木悠太郎",
+  "2520293 細川朝陽",
+  "2520299 立石琢磨",
+  "2520154 山口郁弥",
+] as const;
+
 function playMenuButtonSound() {
   playSound("dialogueNext");
 }
@@ -70,6 +77,11 @@ export function MainMenu({
               GUIDE
             </button>
           </div>
+          <ul className={styles.credits} aria-label="制作者">
+            {CREDIT_MEMBERS.map((member) => (
+              <li key={member}>{member}</li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
