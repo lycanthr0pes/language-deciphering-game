@@ -33,6 +33,22 @@
   gap: 2.2cqh;
 }
 
+.credits {
+  position: absolute;
+  right: clamp(12px, 2cqw, 32px);
+  bottom: clamp(10px, 2cqh, 24px);
+  display: grid;
+  gap: 0.2em;
+  margin: 0;
+  padding: 0;
+  color: rgba(242, 242, 242, 0.58);
+  font-size: clamp(10px, 0.75cqw, 14px);
+  line-height: 1.45;
+  list-style: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .textButton,
 .difficultyOption,
 .difficultyOptionActive,
